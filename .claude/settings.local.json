@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(node -e ':*)",
+      "Bash(npx next:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -l \"useLang\" d:/Project/new/locomo-front/src/app/dashboard/*/page.tsx)",
+      "Bash(grep -l \"[\\\\u0E00-\\\\u0E7F]\" d:/Project/new/locomo-front/src/app/dashboard/*/page.tsx)",
+      "Bash(npm run:*)",
+      "Bash(npm install *)",
+      "Bash(find /Users/sarawut_t -name \"route_service_*.csv\" 2>/dev/null)",
+      "Read(//Users/sarawut_t/**)",
+      "Bash(npx prisma *)",
+      "Bash(npm run start:dev > /tmp/backend.log 2>&1 & *)",
+      "Bash(curl -s \"http://localhost:4001/route-services?date=2025-01-07\" -H \"Authorization: Bearer test\")",
+      "Bash(curl -s -X POST http://localhost:4001/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"superadmin\",\"password\":\"Admin1234!\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2\\)[:300]\\)\")",
+      "Bash(curl -s -X POST http://localhost:4001/auth/login-user -H 'Content-Type: application/json' -d '{\"username\":\"superadmin\",\"password\":\"Admin1234!\"}')",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)[:400]\\)\")",
+      "Bash(pkill -f \"nest start\")",
+      "Bash(pkill -f \"ts-node.*main\")",
+      "Bash(npm run *)",
+      "Bash(pkill -f \"ts-node\\\\|nest\\\\|node.*dist/main\")",
+      "Bash(xargs kill -9)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d\\)[:500]\\)\")",
+      "Bash(git -C /Users/sarawut_t/Project/locomo-backend log --oneline -3)",
+      "Bash(git -C /Users/sarawut_t/Project/locomo-backend stash list)",
+      "Bash(curl -s \"http://localhost:4001/route-services?date=2025-01-07\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('status:', d.get\\('statusCode'\\), 'message:', str\\(d.get\\('message',''\\)\\)[:60]\\)\")",
+      "Bash(node -e \"const {Prisma} = require\\('/Users/sarawut_t/Project/locomo-backend/node_modules/@prisma/client'\\); console.log\\('dmmf:', typeof Prisma.dmmf, Object.keys\\(Prisma.dmmf||{}\\).slice\\(0,5\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-plus-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --font-noto-thai: 'Noto Sans Thai', sans-serif;
+  --font-jetbrains: 'JetBrains Mono', monospace;
+
+  --color-brand-primary: #0ea5e9;
+  --color-brand-dark: #0369a1;
+  --color-brand-light: #e0f2fe;
+
+  --sidebar-width: 240px;
+  --header-height: 60px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Thai', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #f0f4f8;
+  color: #1e293b;
+}
+
+/* Sidebar scrollbar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+}
+
+/* Table scrollbar */
+.table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Custom card styles */
+.card {
+  @apply bg-white rounded-xl shadow-card border border-slate-100;
+}
+
+/* Stat card gradient accents */
+.stat-card-blue {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  border-left: 3px solid #3b82f6;
+}
+.stat-card-emerald {
+  background: linear-gradient(135deg, #d1fae5 0%, #f0fdf4 100%);
+  border-left: 3px solid #10b981;
+}
+.stat-card-amber {
+  background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+  border-left: 3px solid #f59e0b;
+}
+.stat-card-violet {
+  background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+  border-left: 3px solid #8b5cf6;
+}
+.stat-card-rose {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fff1f2 100%);
+  border-left: 3px solid #f43f5e;
+}
+.stat-card-cyan {
+  background: linear-gradient(135deg, #cffafe 0%, #ecfeff 100%);
+  border-left: 3px solid #06b6d4;
+}
+
+/* Active nav item */
+.nav-active {
+  background: linear-gradient(90deg, #e0f2fe, #f0f9ff);
+  color: #0284c7;
+  font-weight: 600;
+}
+
+/* Shimmer skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Chart tooltip */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.custom-tooltip {
+  @apply bg-white border border-slate-200 rounded-lg shadow-card p-3 text-sm;
+}
+
+/* Table row hover */
+.table-row-hover:hover {
+  @apply bg-sky-50/50;
+}
+
+/* Badge pulse for notifications */
+.badge-pulse::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
+
+/* Hide Longdo Map built-in UI elements */
+.ldmap_dropdown_head,
+.ldmap_menubar {
+  display: none !important;
+}

@@ -1,0 +1,1040 @@
+{
+  "info": {
+    "name": "LOCOMO API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",   "value": "http://localhost:3000",  "type": "string" },
+    { "key": "backendUrl","value": "http://localhost:4001",  "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var json = pm.response.json();",
+            "if (json.success) {",
+            "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+            "}"
+          ], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"emp001\",\n  \"password\": \"Demo1234!\",\n  \"platform\": \"web\",\n  \"device\": \"pc\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var json = pm.response.json();",
+            "if (json.success) {",
+            "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+            "}"
+          ], "type": "text/javascript" } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/profile", "host": ["{{baseUrl}}"], "path": ["api","auth","profile"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/employees?limit=50&page=1",
+              "host": ["{{baseUrl}}"], "path": ["api","employees"],
+              "query": [
+                { "key": "limit",  "value": "50" },
+                { "key": "page",   "value": "1" },
+                { "key": "code",   "value": "", "disabled": true },
+                { "key": "name",   "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Employee",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/employees/:id", "host": ["{{baseUrl}}"], "path": ["api","employees",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"930920\",\n  \"rfid\": \"9309200001\",\n  \"first_name_th\": \"สมชาย\",\n  \"last_name_th\": \"ใจดี\",\n  \"first_name_en\": \"Somchai\",\n  \"last_name_en\": \"Jaidee\",\n  \"email\": \"somchai@example.com\",\n  \"username\": \"somchai.j\",\n  \"division_id\": \"\",\n  \"department_id\": \"\",\n  \"level_id\": \"\",\n  \"route_id\": \"\",\n  \"point_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/employees", "host": ["{{baseUrl}}"], "path": ["api","employees"] }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"first_name_th\": \"สมชาย\",\n  \"last_name_th\": \"ใจดี\",\n  \"first_name_en\": \"Somchai\",\n  \"last_name_en\": \"Jaidee\",\n  \"email\": \"somchai@example.com\",\n  \"route_id\": \"\",\n  \"point_id\": \"\",\n  \"level_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/employees/:id", "host": ["{{baseUrl}}"], "path": ["api","employees",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/employees/:id", "host": ["{{baseUrl}}"], "path": ["api","employees",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?limit=50&page=1",
+              "host": ["{{baseUrl}}"], "path": ["api","users"],
+              "query": [
+                { "key": "limit", "value": "50" },
+                { "key": "page",  "value": "1" },
+                { "key": "type",  "value": "", "disabled": true },
+                { "key": "status","value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/users/:id", "host": ["{{baseUrl}}"], "path": ["api","users",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create User (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"employeeId\": \"\",\n  \"roleIds\": [],\n  \"username\": \"somchai.j\",\n  \"password\": \"Pass1234!\",\n  \"language\": \"th\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/users/employee", "host": ["{{baseUrl}}"], "path": ["api","users","employee"] }
+          }
+        },
+        {
+          "name": "Create User (Driver)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"driverId\": \"\",\n  \"roleId\": \"\",\n  \"username\": \"driver.d\",\n  \"password\": \"Pass1234!\",\n  \"language\": \"th\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/users/driver", "host": ["{{baseUrl}}"], "path": ["api","users","driver"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"type\": \"employee\",\n  \"roleIds\": [],\n  \"language\": \"th\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/users/:id", "host": ["{{baseUrl}}"], "path": ["api","users",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/users/:id", "host": ["{{baseUrl}}"], "path": ["api","users",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/roles?limit=100", "host": ["{{baseUrl}}"], "path": ["api","roles"], "query": [{ "key": "limit", "value": "100" }] }
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"ผู้จัดการ\",\n  \"name_en\": \"Manager\",\n  \"type\": \"employee\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/roles", "host": ["{{baseUrl}}"], "path": ["api","roles"] }
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"ผู้จัดการ\",\n  \"name_en\": \"Manager\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/roles/:id", "host": ["{{baseUrl}}"], "path": ["api","roles",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/roles/:id", "host": ["{{baseUrl}}"], "path": ["api","roles",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Routes & Points",
+      "item": [
+        {
+          "name": "List Routes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/routes?limit=100",
+              "host": ["{{baseUrl}}"], "path": ["api","routes"],
+              "query": [
+                { "key": "limit", "value": "100" },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "trip_direction", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Route",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/routes/:id", "host": ["{{baseUrl}}"], "path": ["api","routes",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Route",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"R001\",\n  \"name_th\": \"สายที่ 1\",\n  \"name_en\": \"Route 1\",\n  \"trip_direction\": \"outbound\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/routes", "host": ["{{baseUrl}}"], "path": ["api","routes"] }
+          }
+        },
+        {
+          "name": "Update Route",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"สายที่ 1\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/routes/:id", "host": ["{{baseUrl}}"], "path": ["api","routes",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Route",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/routes/:id", "host": ["{{baseUrl}}"], "path": ["api","routes",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Points",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/points?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","points"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "route_id", "value": "", "disabled": true },
+                { "key": "status",   "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Point",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"route_id\": \"\",\n  \"code\": \"P001\",\n  \"name_th\": \"จุดที่ 1\",\n  \"name_en\": \"Point 1\",\n  \"latitude\": 13.7563,\n  \"longitude\": 100.5018,\n  \"queue_default\": 1,\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/points", "host": ["{{baseUrl}}"], "path": ["api","points"] }
+          }
+        },
+        {
+          "name": "Update Point",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"จุดที่ 1\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/points/:id", "host": ["{{baseUrl}}"], "path": ["api","points",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Point",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/points/:id", "host": ["{{baseUrl}}"], "path": ["api","points",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Shifts",
+      "item": [
+        {
+          "name": "List Shift Groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shift-groups?limit=200", "host": ["{{baseUrl}}"], "path": ["api","shift-groups"], "query": [{ "key": "limit", "value": "200" }] }
+          }
+        },
+        {
+          "name": "Create Shift Group",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"SG01\",\n  \"name_th\": \"กลุ่มกะ 1\",\n  \"name_en\": \"Shift Group 1\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/shift-groups", "host": ["{{baseUrl}}"], "path": ["api","shift-groups"] }
+          }
+        },
+        {
+          "name": "Update Shift Group",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"กลุ่มกะ 1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/shift-groups/:id", "host": ["{{baseUrl}}"], "path": ["api","shift-groups",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Shift Group",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shift-groups/:id", "host": ["{{baseUrl}}"], "path": ["api","shift-groups",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Shifts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/shifts?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","shifts"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "shift_group_id", "value": "", "disabled": true },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "trip_direction", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Shift",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"shift_group_id\": \"\",\n  \"route_id\": \"\",\n  \"code\": \"S001\",\n  \"name_th\": \"กะเช้า\",\n  \"name_en\": \"Morning Shift\",\n  \"type\": \"normal\",\n  \"schedule\": \"daily\",\n  \"trip_direction\": \"outbound\",\n  \"depart_time\": \"07:00\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/shifts", "host": ["{{baseUrl}}"], "path": ["api","shifts"] }
+          }
+        },
+        {
+          "name": "Update Shift",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"กะเช้า\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/shifts/:id", "host": ["{{baseUrl}}"], "path": ["api","shifts",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Shift",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/shifts/:id", "host": ["{{baseUrl}}"], "path": ["api","shifts",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "List Vehicle Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vehicle-types?limit=200", "host": ["{{baseUrl}}"], "path": ["api","vehicle-types"], "query": [{ "key": "limit", "value": "200" }] }
+          }
+        },
+        {
+          "name": "Create Vehicle Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"รถมินิบัส\",\n  \"name_en\": \"Minibus\",\n  \"capacity\": 25,\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicle-types", "host": ["{{baseUrl}}"], "path": ["api","vehicle-types"] }
+          }
+        },
+        {
+          "name": "Update Vehicle Type",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"รถมินิบัส\",\n  \"capacity\": 30\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicle-types/:id", "host": ["{{baseUrl}}"], "path": ["api","vehicle-types",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Vehicle Type",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vehicle-types/:id", "host": ["{{baseUrl}}"], "path": ["api","vehicle-types",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Vehicles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","vehicles"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "vehicle_type_id", "value": "", "disabled": true },
+                { "key": "is_status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Vehicle",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"vehicle_type_id\": \"\",\n  \"code\": \"VH001\",\n  \"license_plate\": \"กข 1234\",\n  \"province\": \"กรุงเทพมหานคร\",\n  \"capacity\": 25,\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles", "host": ["{{baseUrl}}"], "path": ["api","vehicles"] }
+          }
+        },
+        {
+          "name": "Update Vehicle",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"license_plate\": \"กข 1234\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vehicles/:id", "host": ["{{baseUrl}}"], "path": ["api","vehicles",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Vehicle",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vehicles/:id", "host": ["{{baseUrl}}"], "path": ["api","vehicles",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Vendors",
+      "item": [
+        {
+          "name": "List Vendors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","vendors"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "is_status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Vendor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"V001\",\n  \"name_th\": \"บริษัทขนส่ง จำกัด\",\n  \"name_en\": \"Transport Co., Ltd.\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vendors", "host": ["{{baseUrl}}"], "path": ["api","vendors"] }
+          }
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"บริษัทขนส่ง จำกัด\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Vendor",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - List Companies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/companies", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","companies"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - Add Company",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"company_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/companies", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","companies"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - Remove Company",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/companies?company_id=", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","companies"], "query": [{ "key": "company_id", "value": "" }], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - List Plants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/plants", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","plants"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - Add Plant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"plant_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/plants", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","plants"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Vendor - Remove Plant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/vendors/:id/plants?plant_id=", "host": ["{{baseUrl}}"], "path": ["api","vendors",":id","plants"], "query": [{ "key": "plant_id", "value": "" }], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Companies & Plants",
+      "item": [
+        {
+          "name": "List Companies",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/companies?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","companies"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "company_type", "value": "", "disabled": true },
+                { "key": "is_status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"C001\",\n  \"name_th\": \"บริษัท NIC จำกัด\",\n  \"name_en\": \"NIC Co., Ltd.\",\n  \"company_type\": \"customer\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/companies", "host": ["{{baseUrl}}"], "path": ["api","companies"] }
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"บริษัท NIC จำกัด\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/companies/:id", "host": ["{{baseUrl}}"], "path": ["api","companies",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - List Plants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - Add Plant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"plant_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - Remove Plant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants?plant_id=", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants"], "query": [{ "key": "plant_id", "value": "" }], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - List Plant Employees",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants/:plant_id/employees", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants",":plant_id","employees"], "variable": [{ "key": "id", "value": "" }, { "key": "plant_id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - Add Plant Employee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"employee_id\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants/:plant_id/employees", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants",":plant_id","employees"], "variable": [{ "key": "id", "value": "" }, { "key": "plant_id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Company - Remove Plant Employee",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/companies/:id/plants/:plant_id/employees?employee_id=", "host": ["{{baseUrl}}"], "path": ["api","companies",":id","plants",":plant_id","employees"], "query": [{ "key": "employee_id", "value": "" }], "variable": [{ "key": "id", "value": "" }, { "key": "plant_id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Plants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/plants?limit=200", "host": ["{{baseUrl}}"], "path": ["api","plants"], "query": [{ "key": "limit", "value": "200" }] }
+          }
+        },
+        {
+          "name": "Create Plant",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"PL001\",\n  \"name_th\": \"โรงงาน A\",\n  \"name_en\": \"Plant A\",\n  \"latitude\": 13.7563,\n  \"longitude\": 100.5018,\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/plants", "host": ["{{baseUrl}}"], "path": ["api","plants"] }
+          }
+        },
+        {
+          "name": "Update Plant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"โรงงาน A\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/plants/:id", "host": ["{{baseUrl}}"], "path": ["api","plants",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Plant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/plants/:id", "host": ["{{baseUrl}}"], "path": ["api","plants",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Coordinators",
+      "item": [
+        {
+          "name": "List Coordinator Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/coordinator-types?limit=200", "host": ["{{baseUrl}}"], "path": ["api","coordinator-types"], "query": [{ "key": "limit", "value": "200" }] }
+          }
+        },
+        {
+          "name": "Create Coordinator Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"ผู้ประสานงาน\",\n  \"name_en\": \"Coordinator\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/coordinator-types", "host": ["{{baseUrl}}"], "path": ["api","coordinator-types"] }
+          }
+        },
+        {
+          "name": "Update Coordinator Type",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"ผู้ประสานงาน\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/coordinator-types/:id", "host": ["{{baseUrl}}"], "path": ["api","coordinator-types",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Coordinator Type",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/coordinator-types/:id", "host": ["{{baseUrl}}"], "path": ["api","coordinator-types",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Coordinators",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/coordinators?limit=200",
+              "host": ["{{baseUrl}}"], "path": ["api","coordinators"],
+              "query": [
+                { "key": "limit", "value": "200" },
+                { "key": "coordinator_type_id", "value": "", "disabled": true },
+                { "key": "company_id", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Coordinator",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"coordinator_type_id\": \"\",\n  \"company_id\": \"\",\n  \"name_th\": \"สมหญิง ใจดี\",\n  \"name_en\": \"Somying Jaidee\",\n  \"tel\": \"0812345678\",\n  \"email\": \"somying@example.com\",\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/coordinators", "host": ["{{baseUrl}}"], "path": ["api","coordinators"] }
+          }
+        },
+        {
+          "name": "Update Coordinator",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"สมหญิง ใจดี\",\n  \"tel\": \"0812345678\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/coordinators/:id", "host": ["{{baseUrl}}"], "path": ["api","coordinators",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Coordinator",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/coordinators/:id", "host": ["{{baseUrl}}"], "path": ["api","coordinators",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Zones",
+      "item": [
+        {
+          "name": "List Zones",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/zones?limit=200", "host": ["{{baseUrl}}"], "path": ["api","zones"], "query": [{ "key": "limit", "value": "200" }] }
+          }
+        },
+        {
+          "name": "Create Zone",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"Z001\",\n  \"name_th\": \"โซน A\",\n  \"name_en\": \"Zone A\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/zones", "host": ["{{baseUrl}}"], "path": ["api","zones"] }
+          }
+        },
+        {
+          "name": "Update Zone",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name_th\": \"โซน A\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/zones/:id", "host": ["{{baseUrl}}"], "path": ["api","zones",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Zone",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/zones/:id", "host": ["{{baseUrl}}"], "path": ["api","zones",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Zone - Assign Routes (batch)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"route_ids\": [\"route-id-1\", \"route-id-2\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/zones/:id/routes/batch", "host": ["{{baseUrl}}"], "path": ["api","zones",":id","routes","batch"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Zone - Remove Route",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/zones/:id/routes/:route_id", "host": ["{{baseUrl}}"], "path": ["api","zones",":id","routes",":route_id"], "variable": [{ "key": "id", "value": "" }, { "key": "route_id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Calendar",
+      "item": [
+        {
+          "name": "List Calendar Groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendar-groups?limit=500",
+              "host": ["{{baseUrl}}"], "path": ["api","calendar-groups"],
+              "query": [
+                { "key": "limit", "value": "500" },
+                { "key": "plant_company_id", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Calendar Group",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"plant_company_id\": \"\",\n  \"name\": \"กลุ่มปฏิทิน 1\",\n  \"color\": \"#3b82f6\",\n  \"description\": \"\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/calendar-groups", "host": ["{{baseUrl}}"], "path": ["api","calendar-groups"] }
+          }
+        },
+        {
+          "name": "Update Calendar Group",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"กลุ่มปฏิทิน 1\",\n  \"color\": \"#ef4444\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/calendar-groups/:id", "host": ["{{baseUrl}}"], "path": ["api","calendar-groups",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Calendar Group",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/calendar-groups/:id", "host": ["{{baseUrl}}"], "path": ["api","calendar-groups",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "List Calendars",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/calendars?limit=1000&date_from=2026-01-01&date_to=2026-12-31",
+              "host": ["{{baseUrl}}"], "path": ["api","calendars"],
+              "query": [
+                { "key": "limit", "value": "1000" },
+                { "key": "date_from", "value": "2026-01-01" },
+                { "key": "date_to",   "value": "2026-12-31" },
+                { "key": "plant_company_id", "value": "", "disabled": true },
+                { "key": "calendar_group_id", "value": "", "disabled": true },
+                { "key": "type", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Calendar",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"plant_company_id\": \"\",\n  \"calendar_group_id\": \"\",\n  \"name_th\": \"วันหยุดสงกรานต์\",\n  \"name_en\": \"Songkran\",\n  \"date_at\": \"2026-04-13\",\n  \"type\": \"holiday\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/calendars", "host": ["{{baseUrl}}"], "path": ["api","calendars"] }
+          }
+        },
+        {
+          "name": "Delete Calendar",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/calendars/:id", "host": ["{{baseUrl}}"], "path": ["api","calendars",":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Organization",
+      "item": [
+        {
+          "name": "List Org Levels",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organization-levels?company_plant_id=",
+              "host": ["{{baseUrl}}"], "path": ["api","organization-levels"],
+              "query": [{ "key": "company_plant_id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create Org Level",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"company_plant_id\": \"\",\n  \"code\": \"L1\",\n  \"name_th\": \"ระดับที่ 1\",\n  \"name_en\": \"Level 1\",\n  \"level\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/organization-levels", "host": ["{{baseUrl}}"], "path": ["api","organization-levels"] }
+          }
+        },
+        {
+          "name": "List Org Units",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organization-units?company_plant_id=",
+              "host": ["{{baseUrl}}"], "path": ["api","organization-units"],
+              "query": [
+                { "key": "company_plant_id", "value": "" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Org Unit",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"company_plant_id\": \"\",\n  \"organization_level_id\": \"\",\n  \"parent_id\": null,\n  \"code\": \"DIV01\",\n  \"name_th\": \"ฝ่ายผลิต\",\n  \"name_en\": \"Production\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/organization-units", "host": ["{{baseUrl}}"], "path": ["api","organization-units"] }
+          }
+        },
+        {
+          "name": "List Levels",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/levels?limit=100", "host": ["{{baseUrl}}"], "path": ["api","levels"], "query": [{ "key": "limit", "value": "100" }] }
+          }
+        },
+        {
+          "name": "Create Level",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"LV1\",\n  \"name_th\": \"ระดับ 1\",\n  \"name_en\": \"Level 1\",\n  \"is_status\": \"active\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/levels", "host": ["{{baseUrl}}"], "path": ["api","levels"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Direct Backend (port 4001)",
+      "item": [
+        {
+          "name": "[Backend] Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "user-platform", "value": "web" },
+              { "key": "user-device",   "value": "pc" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"emp001\",\n  \"password\": \"Demo1234!\"\n}" },
+            "url": { "raw": "{{backendUrl}}/auth/login-user", "host": ["{{backendUrl}}"], "path": ["auth","login-user"] }
+          }
+        },
+        {
+          "name": "[Backend] Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{backendUrl}}/auth/profile-user", "host": ["{{backendUrl}}"], "path": ["auth","profile-user"] }
+          }
+        },
+        {
+          "name": "[Backend] Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "user-platform", "value": "web" },
+              { "key": "user-device",   "value": "pc" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{backendUrl}}/auth/refresh-token", "host": ["{{backendUrl}}"], "path": ["auth","refresh-token"] }
+          }
+        }
+      ]
+    }
+
+  ]
+}
