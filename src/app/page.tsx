@@ -13,10 +13,12 @@ export default function LandingPage() {
   }, [loadProfile])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/mobile')
-    } else {
+    // ── ยังไม่ login → ไป login ─────────
+    if (!isAuthenticated) {
       router.replace('/login')
+    } else {
+      // ── login แล้ว → ไป mobile ─────────
+      router.replace('/mobile')
     }
   }, [isAuthenticated, router])
 
