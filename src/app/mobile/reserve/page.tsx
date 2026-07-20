@@ -246,7 +246,7 @@ const selectedDirection = selectedShift?.direction
             <h2 className="text-sm font-bold text-slate-800">
               หมายเหตุ (ถ้ามี)
             </h2>
-            <Pencil size={16} className="text-amber-500" />
+          
           </div>
           <textarea
             value={note}

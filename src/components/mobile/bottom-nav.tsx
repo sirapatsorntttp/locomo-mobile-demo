@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, Bus, ScanLine, Clock3, User } from 'lucide-react'
+import { House, Bus, ScanLine, Clock3, User,Settings } from 'lucide-react'
 import { useUIStore } from '@/lib/store'
 
 const menus = [
   { href: '/mobile/home',     label: 'Home',      icon: House },
   { href: '/mobile/tracking', label: 'ติดตามรถ',  icon: Bus },
   { href: '/mobile/history',  label: 'History',   icon: Clock3 },
-  { href: '/mobile/profile',  label: 'Profile',   icon: User },
+  { href: '/mobile/profile',  label: 'Setting',   icon: Settings },
 ]
 
 export default function BottomNav() {
