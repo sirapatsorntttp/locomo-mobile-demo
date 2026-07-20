@@ -15,8 +15,11 @@ import {
   Bell,
   Phone,
   Settings,
+  Calendar ,
+
 } from 'lucide-react'
 import { useUIStore } from '@/lib/store'
+import { useAuthStore } from '@/lib/stores/auth.store'
 
 interface Props {
   open: boolean
@@ -25,21 +28,22 @@ interface Props {
 
 const menuItems = [
   { href: '/mobile/home',      label: 'หน้าหลัก',           icon: Home },
-  { href: '/mobile/booking',   label: 'การเดินทาง',         icon: Bus },
+  { href: '/mobile/calendar',   label: 'ปฏิทิน',         icon: Calendar },
   { href: '/mobile/reserve',   label: 'จองรถ',              icon: Car },
   { href: '/mobile/history',   label: 'ประวัติการจองรถ',    icon: Clock },
   { href: '/mobile/qrcode',    label: 'สแกน QR CODE',       icon: ScanLine },
   { href: '/mobile/tracking',  label: 'ติดตามรถ',           icon: MapPin },
-  { href: '/mobile/feedback',  label: 'รายงานข้อเสนอแนะ',   icon: MessageSquareWarning },
+  { href: '/mobile/comment',  label: 'รายงานข้อเสนอแนะ',   icon: MessageSquareWarning },
   { href: '/mobile/notify',    label: 'การแจ้งเตือน',       icon: Bell },
   { href: '/mobile/contact',   label: 'ติดต่อเรา',          icon: Phone },
-  { href: '/mobile/settings',  label: 'การตั้งค่า',         icon: Settings },
+  { href: '/mobile/profile',  label: 'การตั้งค่า',         icon: Settings },
 ]
 
 export default function SideMenu({ open, onClose }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const { openDialog, closeDialog } = useUIStore()
+  const { logout } = useAuthStore()
 
   //  ซ่อน BottomNav + Lock scroll ตอนเปิด
   useEffect(() => {
@@ -56,10 +60,8 @@ export default function SideMenu({ open, onClose }: Props) {
     }
   }, [open, openDialog, closeDialog])
 
-  const handleLogout = () => {
-    // TODO: เรียก logout API
-    console.log('logout')
-    onClose()
+ const handleLogout = async () => {
+    await logout()
     router.push('/login')
   }
 

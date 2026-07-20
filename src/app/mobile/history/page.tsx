@@ -4,87 +4,9 @@ import { useState } from 'react'
 import { MapPin, Calendar, User, CheckCircle2, Clock, XCircle,Menu } from 'lucide-react'
 import BookingDialog from '@/components/modals/BookingDialog'
 import { useUIStore } from '@/lib/store'
+import { mockHistory, type BookingStatus } from '@/lib/mockData'
 
 type TabType = 'pending' | 'approved' | 'cancelled'
-
-/* ═══════ Mock Data ═══════ */
-const mockHistory = [
-  {
-    id: 'B001',
-    routeCode: 'A01',
-    from: 'ตลาดบ้านโพธิ์',
-    to: 'โรงงาน',
-    date: 'วันจันทร์ที่ 15 พ.ค. 2569',
-    time: '09:45 น.',
-    empCode: 'EMP12754',
-    empName: 'สมชาย ใจดี',
-    status: 'approved' as TabType,
-    
-bookingDate: '15/05/69',
-    bookingTime: '09:45 น.',
-
-  },
-  {
-    id: 'B002',
-    routeCode: 'A01',
-    from: 'ตลาดบ้านโพธิ์',
-    to: 'โรงงาน',
-    date: 'วันจันทร์ที่ 15 พ.ค. 2569',
-    time: '09:45 น.',
-    empCode: 'EMP12754',
-    empName: 'สมชาย ใจดี',
-    status: 'approved' as TabType,
-    
-bookingDate: '15/05/69',
-    bookingTime: '09:45 น.',
-
-  },
-  {
-    id: 'B003',
-    routeCode: 'A01',
-    from: 'ตลาดบ้านโพธิ์',
-    to: 'โรงงาน',
-    date: 'วันจันทร์ที่ 15 พ.ค. 2569',
-    time: '09:45 น.',
-    empCode: 'EMP12754',
-    empName: 'สมชาย ใจดี',
-    status: 'approved' as TabType,
-    
-bookingDate: '15/05/69',
-    bookingTime: '09:45 น.',
-
-  },
-  {
-    id: 'B004',
-    routeCode: 'A01',
-    from: 'ตลาดบ้านโพธิ์',
-    to: 'โรงงาน',
-    date: 'วันจันทร์ที่ 15 พ.ค. 2569',
-    time: '09:45 น.',
-    empCode: 'EMP12754',
-    empName: 'สมชาย ใจดี',
-    status: 'pending' as TabType,
-    
-bookingDate: '15/05/69',
-    bookingTime: '09:45 น.',
-
-  },
-  {
-    id: 'B005',
-    routeCode: 'A01',
-    from: 'ตลาดบ้านโพธิ์',
-    to: 'โรงงาน',
-    date: 'วันจันทร์ที่ 15 พ.ค. 2569',
-    time: '09:45 น.',
-    empCode: 'EMP12754',
-    empName: 'สมชาย ใจดี',
-    status: 'cancelled' as TabType,
-    
-bookingDate: '15/05/69',
-    bookingTime: '09:45 น.',
-
-  },
-]
 
 export default function HistoryPage() {
   const [tab, setTab] = useState<TabType>('approved')
