@@ -12,6 +12,7 @@ import { useUIStore } from '@/lib/store'
 import CalendarDialog from '@/components/modals/CalendarDialog'
 import { mockHistory, toExistingBookings } from '@/lib/mockData'
 import { useRouter } from 'next/navigation'
+import EditRouteDialog from '@/components/modals/EditRouteDialog'
 
 
 type BookingType = 'normal' | 'ot'
@@ -418,6 +419,14 @@ function RouteField({
   codeColor: string
   value: string
 }) {
+
+   const [editOpen, setEditOpen] = useState(false)
+
+       const handleSaveRoute = (data: any) => {
+    console.log('บันทึก:', data)
+    setEditOpen(false)
+    // TODO: เรียก API อัปเดต
+  }
   return (
     <div>
       <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
@@ -437,7 +446,30 @@ function RouteField({
           </>
         )}
         <span className="flex-1 text-sm text-slate-600">{value}</span>
-        <Pencil size={16} className="text-amber-500" />
+        <button
+        type="button"
+        onClick={() => setEditOpen(true)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-amber-500 hover:bg-amber-50"
+      >
+        <Pencil size={18} />
+      </button>
+
+        {/* Dialog */}
+            {editOpen && (
+              <EditRouteDialog
+                user={{
+                  name: 'สมชาย ใจดี',
+                  empCode: 'EMP10245',
+                }}
+                initialData={{
+                  tripIn:  { routeId: 'r1', pickup: 'หน้าโรงงาน' },
+                  tripOut: { routeId: 'r1', pickup: 'หน้าโรงงาน' },
+                }}
+             
+                onClose={() => setEditOpen(false)}
+                onSave={handleSaveRoute}
+              />
+            )}
       </div>
     </div>
   )

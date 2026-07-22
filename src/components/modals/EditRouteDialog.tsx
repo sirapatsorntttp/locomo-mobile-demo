@@ -8,6 +8,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useUIStore } from '@/lib/store'
+import { CustomSelect } from './CustomSelect'
 
 /* ─── Types ─── */
 export interface RouteOption {
@@ -234,7 +235,7 @@ function TripSection({
       </div>
 
       {/* Pickup dropdown */}
-      <PickupSelect
+      <CustomSelect
         value={selectedPickup}
         options={pickupOptions}
         onChange={onSelectPickup}
@@ -304,55 +305,3 @@ function RouteRadio({
   )
 }
 
-/* ─── Pickup Dropdown ─── */
-function PickupSelect({
-  value,
-  options,
-  onChange,
-}: {
-  value: string
-  options: string[]
-  onChange: (p: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-800 transition hover:bg-slate-200"
-      >
-        <span>{value || 'เลือกจุดรับส่ง'}</span>
-        <ChevronDown
-          size={18}
-          className={`text-slate-500 transition-transform ${
-            open ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => {
-                onChange(opt)
-                setOpen(false)
-              }}
-              className={`w-full px-4 py-2.5 text-left text-sm transition ${
-                value === opt
-                  ? 'bg-blue-50 font-semibold text-blue-600'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}

@@ -103,7 +103,7 @@ export default function MobileHome() {
           <MenuCard
             icon={<CarFront className="text-blue-600" size={40} strokeWidth={1.8} />}
             label="จองรถ"
-            onClick={() => router.push('/mobile/booking')}
+            onClick={() => router.push('/mobile/reserve')}
           />
           <MenuCard
             icon={<Clock className="text-blue-600" size={40} strokeWidth={1.8} />}
@@ -119,7 +119,7 @@ export default function MobileHome() {
               />
             }
             label="รายงานข้อเสนอแนะ"
-            onClick={() => router.push('/mobile/feedback')}
+            onClick={() => router.push('/mobile/comment')}
           />
           <MenuCard
             icon={<Phone className="text-blue-600" size={40} strokeWidth={1.8} />}

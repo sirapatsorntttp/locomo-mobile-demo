@@ -11,6 +11,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { useUIStore } from '@/lib/store'
+import { CustomSelect } from './CustomSelect'
 
 /* ═══════ Types ═══════ */
 type BookingStatus = 'pending' | 'approved' | 'cancelled'
@@ -131,18 +132,20 @@ export default function BookingDialog({ booking, onClose }: Props) {
               icon={<Calendar size={18} className="text-blue-500" />}
               label="วันที่เดินทาง"
             >
-              <SelectField
-                value={date}
-                onChange={setDate}
-                options={dateOptions}
-              />
+              
+<CustomSelect
+  value={date}
+  onChange={setDate}
+  options={dateOptions}
+/>
+
             </FieldRow>
 
             <FieldRow
               icon={<Navigation size={18} className="text-blue-500" />}
               label="รอบ"
             >
-              <SelectField
+              <CustomSelect
                 value={round}
                 onChange={setRound}
                 options={roundOptions}
@@ -153,7 +156,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
               icon={<Clock size={18} className="text-blue-500" />}
               label="เวลารับ"
             >
-              <SelectField
+              <CustomSelect
                 value={time}
                 onChange={setTime}
                 options={timeOptions}
@@ -223,36 +226,6 @@ function TextDisplay({ value }: { value: string }) {
   return (
     <div className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700">
       {value}
-    </div>
-  )
-}
-/* ═══════ Select Field ═══════ */
-function SelectField({
-  value,
-  onChange,
-  options,
-}: {
-  value: string
-  onChange: (v: string) => void
-  options: string[]
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none bg-white border border-slate-200 rounded-xl px-3 py-2.5 pr-9 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={16}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-      />
     </div>
   )
 }
