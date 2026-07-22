@@ -12,54 +12,9 @@ import {
 } from 'lucide-react'
 
 import { useUIStore } from '@/lib/store'
+import { mockRoutes } from '@/lib/mockData'
 
-/* ═══════ Mock Data ═══════ */
-export const mockRoutes = [
-  {
-    id: 'A01',
-    routeCode: 'A01',
-    routeName: 'ตลาดบ้านโพธิ์-โรงงาน',
-    tripType: 'ไป-กลับ',
-    status: 'on-route',
-    from: 'หน้าหมู่บ้านโคโนฮะ',
-    to: 'โรงงาน',
-    startTime: '07:20',
-    endTime: '08:15',
-    bookingDate: '14 พฤษภาคม 2569',
-    bookingTime: '10:30 น.',
-    driver: 'พี่สมชาย ใจดี',
-    phone: '081-xxx-xxxx',
-    vehicleNo: 'C12',
-    vehicleName: 'Rolls-Royce',
-    plateNo: '30-1234 ชลบุรี',
-    currentStop: 'ป้ายกาญจนา',
-    progress: 65,
-    etaMinutes: 10,
-    etaTime: '07:50',
-  },
-  {
-    id: 'A02',
-    routeCode: 'B02',
-    routeName: 'ตลาดคลองสวน-โรงงาน',
-    tripType: 'ไป-กลับ',
-    status: 'waiting',
-    from: 'หน้าปั๊มปตท.',
-    to: 'โรงงาน',
-    startTime: '08:00',
-    endTime: '08:45',
-    bookingDate: '14 พฤษภาคม 2569',
-    bookingTime: '11:00 น.',
-    driver: 'พี่สมศักดิ์ ขับดี',
-    phone: '082-xxx-xxxx',
-    vehicleNo: 'C08',
-    vehicleName: 'Toyota Commuter',
-    plateNo: '30-5050 ชลบุรี',
-    currentStop: 'ยังไม่ออก',
-    progress: 0,
-    etaMinutes: 30,
-    etaTime: '08:00',
-  },
-]
+
 
 export default function TrackingPage() {
   const router = useRouter()
@@ -72,12 +27,16 @@ export default function TrackingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-blue-500 to-blue-600 rounded-b-[40px] px-5 pt-12 pb-16">
+ <div
+  className="relative rounded-b-[40px] px-7 pt-12 pb-16 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/images/bg.jpg')" }}
+>
+ 
+  <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
 
 
      
-<div className="flex items-start justify-between">
+<div className="flex items-start justify-between  relative  z-10">
         {/* ซ้าย: Title */}
         <div>
           <h1 className="text-xl font-bold text-white">

@@ -64,7 +64,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
     ? 'bg-amber-500'
     : isApproved
       ? 'bg-green-500'
-      : 'bg-slate-400'
+      : 'bg-red-500'
 
   const statusText = isPending
     ? { label: 'รออนุมัติ', color: 'text-amber-500' }

@@ -69,7 +69,7 @@ useEffect(() => {
  
  return (
     <div
-      className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat"
+      className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat "
       style={{ backgroundImage: "url('/images/bg.jpg')" }}
     >
       {/* Overlay บาง ๆ ให้ตัวหนังสืออ่านง่ายขึ้น */}

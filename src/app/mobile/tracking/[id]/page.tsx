@@ -9,8 +9,8 @@ import {
   Bus,
   MapPin,
 } from 'lucide-react'
-import { mockRoutes } from '../page'
 import { useUIStore } from '@/lib/store'
+import { mockRoutes } from '@/lib/mockData'
 
 export default function TrackingDetailPage({
   params,
