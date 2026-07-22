@@ -80,12 +80,12 @@ useEffect(() => {
         {/* ── Logo LOCOMO ── */}
         <div className="mt-16 mb-12 text-center">
           <h1
-            className="text-6xl font-black tracking-wide text-white"
-            style={{
-              textShadow: '0 6px 20px rgba(0,0,0,0.25)',
-              letterSpacing: '0.05em',
-                 WebkitTextStroke: '2px white'
-            }}
+            className="text-6xl font-[1000] tracking-wide 
+ text-transparent bg-clip-text animate-shine
+      bg-[linear-gradient(90deg,rgba(255,255,255,0.15)_0%,rgba(255,255,255,0.4)_25%,#ffffff_50%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.15)_100%)]
+      bg-[length:200%_auto]
+      drop-shadow-[0_6px_20px_rgba(0,0,0,0.35)]
+"
           >
             LOCOMO
           </h1>
