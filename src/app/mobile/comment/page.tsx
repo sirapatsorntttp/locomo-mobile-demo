@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Menu,
   Search,
@@ -10,84 +10,105 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
-} from 'lucide-react'
-import { useUIStore } from '@/lib/store'
-import FeedbackDialog from '@/components/modals/commentDialog'
-import CalendarDialog from '@/components/modals/CalendarDialog'
+} from "lucide-react";
+import { useUIStore } from "@/lib/store";
+import FeedbackDialog from "@/components/modals/commentDialog";
+import CalendarDialog from "@/components/modals/CalendarDialog";
 /* ─── Types ─── */
 export interface FeedbackItem {
-  id: string
-  code: string           // A01-xxxxxx
-  routeName: string      // สายบ้านโพธิ์ - โรงงาน (A01)
-  title: string          // รถขับเร็วมาก
-  detail: string
-  date: string           // 'พฤหัสบดี 16 พ.ค. 2569'
-  time: string           // '06:20 น.'
-  avatar?: string
+  id: string;
+  code: string; // A01-xxxxxx
+  routeName: string; // สายบ้านโพธิ์ - โรงงาน (A01)
+  title: string; // รถขับเร็วมาก
+  detail: string;
+  date: string; // 'พฤหัสบดี 16 พ.ค. 2569'
+  time: string; // '06:20 น.'
+  avatar?: string;
 }
 
 /* ─── Mock ─── */
 const mockFeedback: FeedbackItem[] = [
   {
-    id: 'f1',
-    code: 'A01-xxxxxx',
-    routeName: 'สายบ้านโพธิ์ - โรงงาน (A01)',
-    title: 'รถขับเร็วมาก',
-    detail: 'รถมาสาย ทำให้ถึงช้า',
-    date: 'พฤหัสบดี 16 พ.ค. 2569',
-    time: '06:20 น.',
+    id: "f1",
+    code: "A01-xxxxxx",
+    routeName: "สายบ้านโพธิ์ - โรงงาน (A01)",
+    title: "รถขับเร็วมาก",
+    detail: "รถมาสาย ทำให้ถึงช้า",
+    date: "พฤหัสบดี 16 พ.ค. 2569",
+    time: "06:20 น.",
   },
   {
-    id: 'f2',
-    code: 'A01-xxxxxx',
-    routeName: 'สายบ้านโพธิ์ - โรงงาน (A01)',
-    title: 'รถขับเร็วมาก',
-    detail: 'รถมาสาย ทำให้ถึงช้า',
-    date: 'พฤหัสบดี 16 พ.ค. 2569',
-    time: '06:20 น.',
+    id: "f2",
+    code: "A01-xxxxxx",
+    routeName: "สายบ้านโพธิ์ - โรงงาน (A01)",
+    title: "รถขับเร็วมาก",
+    detail: "รถมาสาย ทำให้ถึงช้า",
+    date: "พฤหัสบดี 16 พ.ค. 2569",
+    time: "06:20 น.",
   },
-]
+];
 
 export default function FeedbackPage() {
-  const router = useRouter()
-  const openMenu = useUIStore((s) => s.openMenu)
+  const router = useRouter();
+  const openMenu = useUIStore((s) => s.openMenu);
 
-  const [search, setSearch] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const [startDate, setStartDate] = useState<Date>(new Date(2026, 4, 3))
-  const [endDate, setEndDate] = useState<Date>(new Date(2026, 4, 3))
-  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [startDate, setStartDate] = useState<Date>(new Date(2026, 4, 3));
+  const [endDate, setEndDate] = useState<Date>(new Date(2026, 4, 3));
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
-
-  const selected = mockFeedback.find((f) => f.id === selectedId) ?? null
+  const selected = mockFeedback.find((f) => f.id === selectedId) ?? null;
 
   const filtered = mockFeedback.filter(
     (f) =>
       f.title.includes(search) ||
       f.routeName.includes(search) ||
       f.code.includes(search),
-  )
+  );
 
   const formatDate = (d: Date) => {
-    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`
-  }
+    const months = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+  };
   const dayOfWeek = (d: Date) => {
-    const days = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ',
-      'วันพฤหัสฯ', 'วันศุกร์', 'วันเสาร์']
-    return days[d.getDay()]
-  }
+    const days = [
+      "วันอาทิตย์",
+      "วันจันทร์",
+      "วันอังคาร",
+      "วันพุธ",
+      "วันพฤหัสฯ",
+      "วันศุกร์",
+      "วันเสาร์",
+    ];
+    return days[d.getDay()];
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* Header */}
-      <div className="rounded-b-[40px] bg-gradient-to-b from-blue-500 to-blue-600 px-5 pb-16 pt-12">
-        <div className="relative flex items-center justify-center">
-          <h1 className="text-xl font-bold text-white">
-            รายงานข้อเสนอแนะ
-          </h1>
+      <div
+        className="relative rounded-b-[40px] px-8 pt-10 pb-10 overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/bg.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/60 via-blue-700/70 to-blue-500/90" />
+
+        <div className="relative flex items-center justify-between">
+          <h1 className="text-xl font-bold text-white">รายงานข้อเสนอแนะ</h1>
           <button
             type="button"
             onClick={openMenu}
@@ -100,10 +121,10 @@ export default function FeedbackPage() {
       </div>
 
       {/* Body */}
-      <div className="-mt-10 space-y-4 px-5">
+      <div className="mt-5 space-y-4 px-5">
         {/* Date Range */}
-       
- <div className="grid grid-cols-2 gap-3 rounded-2xl bg-white p-4 shadow-sm">
+
+        <div className="grid grid-cols-2 gap-3 rounded-2xl bg-white p-4 shadow-sm">
           <DateCard
             label="วันที่เริ่มต้น"
             date={formatDate(startDate)}
@@ -112,13 +133,11 @@ export default function FeedbackPage() {
           />
           <DateCard
             label="วันที่สิ้นสุด"
-               onClick={() => setCalendarOpen(true)}
+            onClick={() => setCalendarOpen(true)}
             date={formatDate(endDate)}
             day={dayOfWeek(endDate)}
-         
           />
         </div>
-
 
         {/* Search + Filter */}
         <div className="flex items-center gap-2">
@@ -131,14 +150,11 @@ export default function FeedbackPage() {
               className="flex-1 bg-transparent text-sm text-slate-700 placeholder-slate-400 outline-none"
             />
           </div>
-          
         </div>
 
         {/* Section title + dropdown */}
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-base font-bold text-slate-800">
-            รายงานของฉัน
-          </h2>
+          <h2 className="text-base font-bold text-slate-800">รายงานของฉัน</h2>
           <button
             type="button"
             className="flex items-center gap-1 text-xs text-slate-500"
@@ -167,42 +183,36 @@ export default function FeedbackPage() {
       </div>
 
       {/* FAB Add */}
-<button
-  type="button"
-  onClick={() => router.push('/mobile/comment/new')}
-  aria-label="เพิ่มข้อเสนอแนะ"
-  className="fixed bottom-28 left-5 right-5 z-30 flex items-center justify-center gap-2 rounded-full  bg-amber-500 py-2 font-bold text-white shadow-lg transition hover:bg-orange-600 active:scale-[0.98]"
->
-  <Plus size={20} strokeWidth={2} />
-  <span className="text-base">New</span>
-</button>
+      <button
+        type="button"
+        onClick={() => router.push("/mobile/comment/new")}
+        aria-label="เพิ่มข้อเสนอแนะ"
+        className="fixed bottom-28 left-5 right-5 z-30 flex items-center justify-center gap-2 rounded-full  bg-amber-500 py-2 font-bold text-white shadow-lg transition hover:bg-orange-600 active:scale-[0.98]"
+      >
+        <Plus size={20} strokeWidth={2} />
+        <span className="text-base">New</span>
+      </button>
 
       {/* Detail Dialog */}
       {selected && (
-        <FeedbackDialog
-          item={selected}
-          onClose={() => setSelectedId(null)}
-        />
+        <FeedbackDialog item={selected} onClose={() => setSelectedId(null)} />
       )}
-   
 
-   
-{/* alendar Dialog —  */}
+      {/* alendar Dialog —  */}
       {calendarOpen && (
         <CalendarDialog
           startDate={startDate}
           endDate={endDate}
           onClose={() => setCalendarOpen(false)}
           onConfirm={(s, e) => {
-            setStartDate(s)
-            setEndDate(e)
-            setCalendarOpen(false)
+            setStartDate(s);
+            setEndDate(e);
+            setCalendarOpen(false);
           }}
         />
       )}
     </div>
-
-  )
+  );
 }
 
 /* ─── Sub Components ─── */
@@ -210,18 +220,17 @@ function DateCard({
   label,
   date,
   day,
-    onClick,
+  onClick,
 }: {
-  label: string
-  date: string
-  day: string
-    onClick?: () => void 
+  label: string;
+  date: string;
+  day: string;
+  onClick?: () => void;
 }) {
-
   return (
-    <button                
+    <button
       type="button"
-      onClick={onClick}       
+      onClick={onClick}
       className="flex items-center gap-3 rounded-2xl border border-slate-300 bg-white px-3 py-3 text-left transition hover:border-blue-400"
     >
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
@@ -233,16 +242,15 @@ function DateCard({
         <p className="text-[11px] text-slate-500">{day}</p>
       </div>
     </button>
-  )
+  );
 }
-
 
 function FeedbackCard({
   item,
   onClick,
 }: {
-  item: FeedbackItem
-  onClick: () => void
+  item: FeedbackItem;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -271,5 +279,5 @@ function FeedbackCard({
 
       <ChevronRight size={18} className="shrink-0 text-slate-300" />
     </button>
-  )
+  );
 }

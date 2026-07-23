@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
   MapPin,
   Calendar,
@@ -9,20 +9,20 @@ import {
   Clock,
   XCircle,
   Menu,
-} from 'lucide-react'
-import BookingDialog from '@/components/modals/BookingDialog'
-import { useUIStore } from '@/lib/store'
-import { mockHistory, type BookingStatus } from '@/lib/mockData'
+} from "lucide-react";
+import BookingDialog from "@/components/modals/BookingDialog";
+import { useUIStore } from "@/lib/store";
+import { mockHistory, type BookingStatus } from "@/lib/mockData";
 
-type TabType = 'pending' | 'approved' | 'cancelled'
+type TabType = "pending" | "approved" | "cancelled";
 
 export default function HistoryPage() {
-  const [tab, setTab] = useState<TabType>('approved')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [tab, setTab] = useState<TabType>("approved");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const filtered = mockHistory.filter((h) => h.status === tab)
-  const selectedBooking = mockHistory.find((h) => h.id === selectedId)
-  const openMenu = useUIStore((s) => s.openMenu)
+  const filtered = mockHistory.filter((h) => h.status === tab);
+  const selectedBooking = mockHistory.find((h) => h.id === selectedId);
+  const openMenu = useUIStore((s) => s.openMenu);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -32,7 +32,7 @@ export default function HistoryPage() {
         style={{ backgroundImage: "url('/images/bg.jpg')" }}
       >
         {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/70 via-blue-700/40 to-blue-500/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
 
         {/* Content */}
         <div className="relative z-10">
@@ -64,18 +64,18 @@ export default function HistoryPage() {
         <div className="flex items-center rounded-full bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
           <TabButton
             label="รออนุมัติ"
-            active={tab === 'pending'}
-            onClick={() => setTab('pending')}
+            active={tab === "pending"}
+            onClick={() => setTab("pending")}
           />
           <TabButton
             label="อนุมัติแล้ว"
-            active={tab === 'approved'}
-            onClick={() => setTab('approved')}
+            active={tab === "approved"}
+            onClick={() => setTab("approved")}
           />
           <TabButton
             label="ยกเลิก"
-            active={tab === 'cancelled'}
-            onClick={() => setTab('cancelled')}
+            active={tab === "cancelled"}
+            onClick={() => setTab("cancelled")}
           />
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function HistoryPage() {
         />
       )}
     </div>
-  )
+  );
 }
 
 /* ═══════ Tab Button ═══════ */
@@ -114,22 +114,22 @@ function TabButton({
   active,
   onClick,
 }: {
-  label: string
-  active: boolean
-  onClick: () => void
+  label: string;
+  active: boolean;
+  onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all ${
         active
-          ? 'bg-blue-600 text-white shadow-sm'
-          : 'text-slate-500 hover:text-slate-700'
+          ? "bg-blue-600 text-white shadow-sm"
+          : "text-slate-500 hover:text-slate-700"
       }`}
     >
       {label}
     </button>
-  )
+  );
 }
 
 /* ═══════ Booking Card ═══════ */
@@ -137,34 +137,34 @@ function BookingCard({
   item,
   onClick,
 }: {
-  item: (typeof mockHistory)[0]
-  onClick?: () => void
+  item: (typeof mockHistory)[0];
+  onClick?: () => void;
 }) {
   const statusConfig = {
     pending: {
-      label: 'รออนุมัติ',
+      label: "รออนุมัติ",
       icon: <Clock size={12} />,
-      className: 'bg-amber-100 text-amber-700',
+      className: "bg-amber-100 text-amber-700",
     },
     approved: {
-      label: 'อนุมัติแล้ว',
+      label: "อนุมัติแล้ว",
       icon: <CheckCircle2 size={12} />,
-      className: 'bg-green-100 text-green-700',
+      className: "bg-green-100 text-green-700",
     },
     cancelled: {
-      label: 'ยกเลิก',
+      label: "ยกเลิก",
       icon: <XCircle size={12} />,
-      className: 'bg-red-100 text-red-600',
+      className: "bg-red-100 text-red-600",
     },
-  }
+  };
 
-  const status = statusConfig[item.status]
+  const status = statusConfig[item.status];
 
   const codeBg = {
-    pending: 'bg-amber-500',
-    approved: 'bg-green-500',
-    cancelled: 'bg-red-500',
-  }[item.status]
+    pending: "bg-amber-500",
+    approved: "bg-green-500",
+    cancelled: "bg-red-500",
+  }[item.status];
 
   return (
     <button
@@ -209,7 +209,7 @@ function BookingCard({
         <div className="flex items-center gap-2 text-slate-600">
           <Calendar size={14} className="flex-shrink-0 text-slate-400" />
           <p className="text-xs ">
-            {item.date }
+            {item.date}
             <span className="ml-2 text-slate-400">•</span>
             <span className="ml-2">{item.time}</span>
           </p>
@@ -217,14 +217,13 @@ function BookingCard({
 
         <div className="flex items-center gap-2 text-slate-600">
           <User size={14} className="flex-shrink-0 text-slate-400" />
-         
-<p className="text-xs">
-  <span>{item.empCode}</span>
-  <span className="ml-2">{item.empName}</span>
-</p>
 
+          <p className="text-xs">
+            <span>{item.empCode}</span>
+            <span className="ml-2">{item.empName}</span>
+          </p>
         </div>
       </div>
     </button>
-  )
+  );
 }

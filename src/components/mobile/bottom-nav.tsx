@@ -12,14 +12,28 @@ const menus = [
   { href: '/mobile/profile',  label: 'Setting',   icon: Settings },
 ]
 
+
+
+const HIDE_ON_ROUTES = [
+  '/mobile/qr',
+  
+  // หน้า ที่ต้องการ fullscreen
+]
+
 export default function BottomNav() {
   const pathname = usePathname()
   const {isDialogOpen} = useUIStore()
+
+  
+ const shouldHide = HIDE_ON_ROUTES.some((route) =>
+    pathname?.startsWith(route)
+  )
+
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + '/')
   const isQRActive = isActive('/mobile/qrcode')
 
-if(isDialogOpen) return null
+  if (shouldHide || isDialogOpen) return null
 
   return (
     <div className="fixed bottom-5 left-5 right-5 z-50">

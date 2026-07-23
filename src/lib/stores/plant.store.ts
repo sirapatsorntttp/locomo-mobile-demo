@@ -1,9 +1,11 @@
 import { apiFetch } from "@/lib/api-fetch"
 import { authHeader } from "@/lib/auth-token"
-import { useStore } from "@/lib/store"
+
 import { Plant, Status } from "@/types"
 import { create } from "zustand"
-import { useCompanyStore } from './company.store'
+import { useStore } from "../store"
+import { useCompanyStore } from "./company.store"
+
 
 type PlantState = {
   plants: Plant[]
