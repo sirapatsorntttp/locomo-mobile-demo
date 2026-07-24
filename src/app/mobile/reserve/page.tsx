@@ -1,23 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Menu,
   Check,
   Calendar as CalendarIcon,
   Sun,
-  Pencil,
   SquarePen,
 } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 import CalendarDialog from "@/components/modals/CalendarDialog";
 import { mockHistory, toExistingBookings } from "@/lib/mockData";
 import { useRouter } from "next/navigation";
-import EditRouteDialog from "@/components/modals/EditRouteDialog";
+import EditRouteDialog, {
+  type EditRouteData,
+} from "@/components/modals/EditRouteDialog";
+
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useEmployeeStore } from "@/lib/stores/employee.store";
+import { useRoutePointStore } from "@/lib/stores/useRoutePointStore";
+import type { EmployeeFull, EmployeeTransportDefault, Language } from "@/types";
 
 type BookingType = "normal" | "ot";
 type RouteType = "round" | "oneway";
-
 type Direction = "in" | "out";
 
 interface Shift {
@@ -45,25 +50,52 @@ const onewayShifts: Shift[] = [
   { id: "out-07", time: "07:00", direction: "out" },
 ];
 
+type UILang = "TH" | "EN";
+const toApiLang = (l: UILang): Language => (l === "TH" ? "th" : "en");
+
 export default function ReservePage() {
   const openMenu = useUIStore((s) => s.openMenu);
   const router = useRouter();
+
+  const { profile } = useAuthStore();
+  const { employees, employeeLoading, updateEmployee, loadEmployees } =
+    useEmployeeStore();
+  const { routes, points, loadRoutesPoints } = useRoutePointStore();
+
+  const [lang] = useState<UILang>("TH");
   const [bookingType, setBookingType] = useState<BookingType>("normal");
   const [routeType, setRouteType] = useState<RouteType>("round");
-  const [shiftId, setShiftId] = useState("1");
+  const [shiftId, setShiftId] = useState("r1");
   const [note, setNote] = useState("");
 
-  // Date range
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const [startDate, setStartDate] = useState<Date>(new Date(2026, 4, 3));
   const [endDate, setEndDate] = useState<Date>(new Date(2026, 4, 3));
   const [calendarOpen, setCalendarOpen] = useState<"start" | "end" | null>(
     null,
   );
 
-  // เลือก shifts ตาม routeType
-  const currentShifts = routeType === "round" ? roundShifts : onewayShifts;
+  useEffect(() => {
+    loadEmployees();
+    loadRoutesPoints();
+  }, [loadEmployees, loadRoutesPoints]);
 
-  // หา direction ที่เลือกอยู่
+  // หา employee ตัวเองจาก code
+  const currentEmployee: EmployeeFull | undefined = employees.find(
+    (employee) => employee.code === profile?.code,
+  );
+
+  const transportDefaults: EmployeeTransportDefault[] =
+    currentEmployee?.transport_defaults ?? [];
+
+  const inbound = transportDefaults.find((t) => t.trip_direction === "inbound");
+  const outbound = transportDefaults.find(
+    (t) => t.trip_direction === "outbound",
+  );
+
+  const currentShifts = routeType === "round" ? roundShifts : onewayShifts;
   const selectedShift = currentShifts.find((s) => s.id === shiftId);
   const selectedDirection = selectedShift?.direction;
 
@@ -98,12 +130,19 @@ export default function ReservePage() {
     return days[d.getDay()];
   };
 
+  const nameOf = (
+    item?: { name_th: string; name_en: string } | null,
+    fallback = "ยังไม่ได้กำหนด",
+  ) => {
+    if (!item) return fallback;
+    return lang === "TH"
+      ? item.name_th || item.name_en || fallback
+      : item.name_en || item.name_th || fallback;
+  };
+
   const existingBookings = useMemo(() => toExistingBookings(mockHistory), []);
 
   const handleSave = () => {
-    // TODO: เรียก API บันทึกจริง เช่น
-    // await fetch('/api/bookings', { method: 'POST', body: JSON.stringify({...}) })
-
     console.log("บันทึก:", {
       bookingType,
       routeType,
@@ -111,13 +150,42 @@ export default function ReservePage() {
       startDate,
       endDate,
       note,
+      inbound,
+      outbound,
     });
-
-    router.push("/mobile/history"); // ไปหน้า history
+    router.push("/mobile/history");
   };
 
-  const handleCancel = () => {
-    router.back(); // กลับหน้าเดิม
+  const handleCancel = () => router.back();
+
+  const handleSaveRoute = async (data: EditRouteData) => {
+    if (!currentEmployee?.id) {
+      console.error("ไม่พบ employee id");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await updateEmployee(currentEmployee.id, {
+        transportDefaults: [
+          {
+            trip_direction: "inbound",
+            route_id: data.tripIn.routeId || undefined,
+            point_id: data.tripIn.pointId || undefined,
+          },
+          {
+            trip_direction: "outbound",
+            route_id: data.tripOut.routeId || undefined,
+            point_id: data.tripOut.pointId || undefined,
+          },
+        ],
+      } as any);
+      setEditOpen(false);
+    } catch (error) {
+      console.error("อัปเดตสายรถไม่สำเร็จ:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -145,28 +213,27 @@ export default function ReservePage() {
 
       {/* Body */}
       <div className="mt-5 space-y-5 px-5">
-        {/* Card ครอบทุก section */}
         <div className="rounded-2xl bg-white p-5 shadow-sm space-y-6">
-          {/* ─── เลือกประเภทการจอง ─── */}
+          {/* ประเภทการจอง */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
               เลือกประเภทการจอง
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <SelectCard
-                selected={routeType === "round"}
-                onClick={() => setRouteType("round")}
-                label="จองรถไป-กลับ"
+                selected={bookingType === "normal"}
+                onClick={() => setBookingType("normal")}
+                label="รอบปกติ"
               />
               <SelectCard
-                selected={routeType === "oneway"}
-                onClick={() => setRouteType("oneway")}
-                label="จองรถขาเดียว"
+                selected={bookingType === "ot"}
+                onClick={() => setBookingType("ot")}
+                label="รอบ OT"
               />
             </div>
           </section>
 
-          {/* ─── เลือกวันที่ ─── */}
+          {/* วันที่ */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
               เลือกวันที่เดินทาง
@@ -187,14 +254,27 @@ export default function ReservePage() {
             </div>
           </section>
 
-          {/* ─── เลือกเส้นทาง ─── */}
+          {/* รูปแบบเส้นทาง */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
               เลือกเส้นทาง
             </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <SelectCard
+                selected={routeType === "round"}
+                onClick={() => setRouteType("round")}
+                label="จองรถไป-กลับ"
+              />
+              <SelectCard
+                selected={routeType === "oneway"}
+                onClick={() => setRouteType("oneway")}
+                label="จองรถขาเดียว"
+              />
+            </div>
+          </section>
 
-            {/* Shifts */}
-
+          {/* Shifts */}
+          <section>
             <div className="mt-3 grid grid-cols-3 gap-3">
               {currentShifts.map((s) => (
                 <ShiftCard
@@ -217,16 +297,19 @@ export default function ReservePage() {
               title="สายรถ"
               subTitle="รับเข้า"
               subColor="text-orange-500"
-              code="A01"
+              code={inbound?.route?.code}
               codeColor="bg-blue-500"
-              value="ตลาดน้ำแพร่ - โรงงาน"
+              value={nameOf(inbound?.route)}
+              onEdit={() => setEditOpen(true)}
             />
             <RouteField
               title="จุดรับส่ง"
               subTitle="รับเข้า"
               subColor="text-orange-500"
+              code={inbound?.point?.code}
               codeColor="bg-blue-500"
-              value="หน้าตลาดน้ำ"
+              value={nameOf(inbound?.point)}
+              onEdit={() => setEditOpen(true)}
             />
           </div>
         )}
@@ -238,21 +321,24 @@ export default function ReservePage() {
               title="สายรถ"
               subTitle="รับออก"
               subColor="text-orange-500"
-              code="A01"
+              code={outbound?.route?.code}
               codeColor="bg-orange-400"
-              value="ตลาดน้ำแพร่ - โรงงาน"
+              value={nameOf(outbound?.route)}
+              onEdit={() => setEditOpen(true)}
             />
             <RouteField
               title="จุดรับส่ง"
               subTitle="รับออก"
               subColor="text-orange-500"
+              code={outbound?.point?.code}
               codeColor="bg-orange-400"
-              value="หน้าตลาดน้ำ"
+              value={nameOf(outbound?.point)}
+              onEdit={() => setEditOpen(true)}
             />
           </div>
         )}
 
-        {/* ─── หมายเหตุ ─── */}
+        {/* หมายเหตุ */}
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800">
@@ -268,7 +354,7 @@ export default function ReservePage() {
           />
         </div>
 
-        {/* ─── ปุ่ม ─── */}
+        {/* ปุ่ม */}
         <div className="space-y-3">
           <button
             type="button"
@@ -299,6 +385,39 @@ export default function ReservePage() {
             setEndDate(e);
             setCalendarOpen(null);
           }}
+        />
+      )}
+
+      {/* Edit Route Dialog */}
+      {editOpen && currentEmployee && (
+        <EditRouteDialog
+          user={{
+            name:
+              lang === "TH"
+                ? `${currentEmployee.first_name_th ?? ""} ${
+                    currentEmployee.last_name_th ?? ""
+                  }`.trim()
+                : `${currentEmployee.first_name_en ?? ""} ${
+                    currentEmployee.last_name_en ?? ""
+                  }`.trim(),
+            empCode: currentEmployee.code,
+          }}
+          routes={routes}
+          points={points}
+          lang={toApiLang(lang)}
+          initialData={{
+            tripIn: {
+              routeId: inbound?.route_id ?? "",
+              pointId: inbound?.point_id ?? "",
+            },
+            tripOut: {
+              routeId: outbound?.route_id ?? "",
+              pointId: outbound?.point_id ?? "",
+            },
+          }}
+          saving={saving}
+          onClose={() => !saving && setEditOpen(false)}
+          onSave={handleSaveRoute}
         />
       )}
     </div>
@@ -356,7 +475,6 @@ function DateCard({
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
         <CalendarIcon size={16} className="text-white" />
       </div>
-
       <div className="flex-1 leading-tight space-y-1">
         <p className="text-[11px] text-slate-500">{label}</p>
         <p className="text-[13px] font-bold text-slate-800">{date}</p>
@@ -406,6 +524,7 @@ function ShiftCard({
   );
 }
 
+/* ─── Route Field ─── */
 function RouteField({
   title,
   subTitle,
@@ -413,63 +532,46 @@ function RouteField({
   code,
   codeColor,
   value,
+  onEdit,
 }: {
   title: string;
   subTitle: string;
   subColor: string;
-  code?: string;
+  code?: string | null;
   codeColor: string;
   value: string;
+  onEdit: () => void;
 }) {
-  const [editOpen, setEditOpen] = useState(false);
-
-  const handleSaveRoute = (data: any) => {
-    console.log("บันทึก:", data);
-    setEditOpen(false);
-    // TODO: เรียก API อัปเดต
-  };
   return (
     <div>
       <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
         {title}
         <span className={subColor}>{subTitle}</span>
       </div>
+
       <div className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
         <span
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${codeColor}`}
         >
           <Check size={14} className="text-white" strokeWidth={3} />
         </span>
+
         {code && (
           <>
             <span className="text-sm font-bold text-slate-800">{code}</span>
             <span className="text-slate-300">|</span>
           </>
         )}
+
         <span className="flex-1 text-sm text-slate-600">{value}</span>
+
         <button
           type="button"
-          onClick={() => setEditOpen(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-amber-500 hover:bg-amber-50"
+          onClick={onEdit}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-amber-500 hover:bg-amber-50"
         >
           <SquarePen size={22} />
         </button>
-
-        {/* Dialog */}
-        {editOpen && (
-          <EditRouteDialog
-            user={{
-              name: "สมชาย ใจดี",
-              empCode: "EMP10245",
-            }}
-            initialData={{
-              tripIn: { routeId: "r1", pickup: "หน้าโรงงาน" },
-              tripOut: { routeId: "r1", pickup: "หน้าโรงงาน" },
-            }}
-            onClose={() => setEditOpen(false)}
-            onSave={handleSaveRoute}
-          />
-        )}
       </div>
     </div>
   );

@@ -51,63 +51,91 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
     }
   },
 
-  addEmployee: async (data) => {
-    const mainStore = useStore.getState()
+addEmployee: async (data) => {
+  const mainStore = useStore.getState()
 
-    try {
-      const cpId =
-        data.company_plant_id ||
-        (isSuperAdmin()
-          ? mainStore.selectedCompanyPlantId
-          : getCompanyPlantId())
+  try {
+    const cpId =
+      data.company_plant_id ||
+      (isSuperAdmin()
+        ? mainStore.selectedCompanyPlantId
+        : getCompanyPlantId())
 
-      if (!cpId) {
-        throw new Error('กรุณาเลือกบริษัท/Plant ก่อนเพิ่มพนักงาน')
-      }
+    if (!cpId) {
+      throw new Error('กรุณาเลือกบริษัท/Plant ก่อนเพิ่มพนักงาน')
+    }
 
-      const cleanedData = {
-        code: data.code,
+
+    const cleanedData = {
+      code: data.code?.trim(),
       rfid: data.rfid?.trim() || undefined,
 
-      firstNameTh: data.first_name_th,
-      lastNameTh: data.last_name_th,
-      firstNameEn: data.first_name_en?.trim() || 'NA',
-      lastNameEn: data.last_name_en?.trim() || 'NA',
+      first_name_th: data.first_name_th?.trim(),
+      last_name_th: data.last_name_th?.trim(),
+      first_name_en: data.first_name_en?.trim() || undefined,
+      last_name_en: data.last_name_en?.trim() || undefined,
 
       email: data.email?.trim() || undefined,
+      phone: data.phone?.trim() || undefined,
+
       company_plant_id: cpId,
-      organization_unit_id: data.organization_unit_id || undefined,
+      organization_unit_id:
+        data.organization_unit_id || undefined,
       level_id: data.level_id || undefined,
-      transportDefaults: data.transportDefaults ?? [],
+
+      transportDefaults: Array.isArray(data.transportDefaults)
+        ? data.transportDefaults.map((td: any) => ({
+            trip_direction: td.trip_direction,
+            route_id: td.route_id || undefined,
+            point_id: td.point_id || undefined,
+          }))
+        : [],
     }
 
+    console.log(
+      'POST /api/employees payload:',
+      JSON.stringify(cleanedData, null, 2),
+    )
 
+    const res = await apiFetch('/api/employees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader(),
+      },
+      body: JSON.stringify(cleanedData),
+    })
 
-     
-const res = await apiFetch('/api/employees', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    ...authHeader(),
-  },
-  body: JSON.stringify(cleanedData),
-})
+    const json = await res.json()
 
+    console.log('POST /api/employees response:', json)
 
-      const json = await res.json()
+    if (!res.ok || !json.success) {
+      const message = Array.isArray(json.message)
+        ? json.message.join(', ')
+        : json.error ||
+          json.message ||
+          'เกิดข้อผิดพลาดในการเพิ่มพนักงาน'
 
-      if (!res.ok) {
-        throw new Error(json.error ?? json.message ?? 'เกิดข้อผิดพลาด')
-      }
-
-      mainStore.addToast('success', 'เพิ่มพนักงานสำเร็จ')
-      await get().loadEmployees()
-      mainStore.closeModal()
-    } catch (err: any) {
-      mainStore.addToast('error', err.message ?? 'เกิดข้อผิดพลาด')
-      throw err
+      throw new Error(message)
     }
-  },
+
+    mainStore.addToast('success', 'เพิ่มพนักงานสำเร็จ')
+
+    await get().loadEmployees()
+    mainStore.closeModal()
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'เกิดข้อผิดพลาดในการเพิ่มพนักงาน'
+
+    console.error('addEmployee error:', error)
+    mainStore.addToast('error', message)
+
+    // ไม่ throw ซ้ำ เพราะจะเกิด Uncaught (in promise)
+  }
+},
 
   updateEmployee: async (id, data) => {
     const mainStore = useStore.getState()

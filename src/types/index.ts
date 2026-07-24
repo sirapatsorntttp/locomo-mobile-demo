@@ -124,6 +124,7 @@ export interface Employee extends BaseEntity {
   first_name_en: string
   last_name_en: string
   email: string | null
+   phone: string | null
   address: string | null
   image: string
   username: string
@@ -149,7 +150,7 @@ export interface EmployeeDefault {
 
 export interface EmployeeTransportDefault {
   id: string
-  trip_direction: string
+  trip_direction: TripDirection
   route_id: string | null
   point_id: string | null
   route?: { id: string; code: string; name_th: string; name_en: string } | null
