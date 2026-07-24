@@ -1,93 +1,104 @@
-'use client'
+"use client";
 
-import {
-  Menu,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-} from 'lucide-react'
-import { useUIStore } from '@/lib/store'
+import { Menu, Phone, Mail, MapPin, Clock } from "lucide-react";
+import { useUIStore } from "@/lib/store";
 
 /* ─── Types ─── */
 interface Contact {
-  id: string
-  name: string
-  vendor: string
-  phone: string
-  hours: string
-  avatar?: string
+  id: string;
+  name: string;
+  vendor: string;
+  phone: string;
+  hours: string;
+  avatar?: string;
 }
 
 /* ─── Mock ─── */
 const rideContacts: Contact[] = [
   {
-    id: 'r1',
-    name: 'คุณวีรเดช',
-    vendor: 'vender1',
-    phone: '081-xxx-xxxx',
-    hours: 'จันทร์ - ศุกร์\n8.00 - 17.00 น.',
+    id: "r1",
+    name: "คุณวีรเดช",
+    vendor: "vender1",
+    phone: "081-xxx-xxxx",
+    hours: "จันทร์ - ศุกร์\n8.00 - 17.00 น.",
   },
   {
-    id: 'r2',
-    name: 'คุณวีรเดช',
-    vendor: 'vender2',
-    phone: '081-xxx-xxxx',
-    hours: 'จันทร์ - ศุกร์\n8.00 - 17.00 น.',
+    id: "r2",
+    name: "คุณวีรเดช",
+    vendor: "vender2",
+    phone: "081-xxx-xxxx",
+    hours: "จันทร์ - ศุกร์\n8.00 - 17.00 น.",
   },
-]
+];
 
 const systemContacts: Contact[] = [
   {
-    id: 's1',
-    name: 'คุณวีรเดช',
-    vendor: 'TTTP',
-    phone: '081-xxx-xxxx',
-    hours: 'จันทร์ - ศุกร์\n8.00 - 17.00 น.',
+    id: "s1",
+    name: "คุณวีรเดช",
+    vendor: "TTTP",
+    phone: "081-xxx-xxxx",
+    hours: "จันทร์ - ศุกร์\n8.00 - 17.00 น.",
   },
-]
+];
 
 const office = {
-  name: 'สำนักงานขนส่ง',
-  company: 'TOYOTA Moter Banpho',
-  address:
-    '100/2 ม.1 ต.บ้านโพธิ์ อ.บ้านโพธิ์\nจ.ฉะเชิงเทรา 20100',
+  name: "สำนักงานขนส่ง",
+  company: "TOYOTA Moter Banpho",
+  address: "100/2 ม.1 ต.บ้านโพธิ์ อ.บ้านโพธิ์\nจ.ฉะเชิงเทรา 20100",
   hours: [
-    { day: 'จันทร์ - ศุกร์', time: '8.00 - 17.00 น.' },
-    { day: 'เสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์', time: 'ปิดทำการ' },
+    { day: "จันทร์ - ศุกร์", time: "8.00 - 17.00 น." },
+    { day: "เสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์", time: "ปิดทำการ" },
   ],
-}
+};
 
 export default function ContactPage() {
-  const openMenu = useUIStore((s) => s.openMenu)
+  const openMenu = useUIStore((s) => s.openMenu);
 
   const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone.replace(/-/g, '')}`
-  }
+    window.location.href = `tel:${phone.replace(/-/g, "")}`;
+  };
 
   const handleEmail = () => {
-    window.location.href = 'mailto:contact@locomo.com'
-  }
+    window.location.href = "mailto:contact@locomo.com";
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* Header */}
-      <div className="rounded-b-[40px] bg-gradient-to-b from-blue-500 to-blue-600 px-5 pb-16 pt-12">
-        <div className="relative flex items-center justify-center">
-          <h1 className="text-xl font-bold text-white">ติดต่อเรา</h1>
-          <button
-            type="button"
-            onClick={openMenu}
-            aria-label="Menu"
-            className="absolute right-0 flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10"
-          >
-            <Menu size={22} />
-          </button>
+      {/* ─── Header: เหมือนหน้า History ─── */}
+      <div
+        className="relative overflow-hidden rounded-b-[40px] bg-cover bg-center px-7 pb-16 pt-12"
+        style={{ backgroundImage: "url('/images/bg.jpg')" }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
+
+        {/* Content */}
+        <div className="relative z-10">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white drop-shadow-md">
+                ติดต่อเรา
+              </h1>
+
+              <p className="mt-1 text-xs text-white/90 drop-shadow">
+                ช่องทางติดต่อและขอความช่วยเหลือ
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={openMenu}
+              aria-label="Menu"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
+            >
+              <Menu size={22} />
+            </button>
+          </div>
         </div>
       </div>
-
       {/* Body */}
-      <div className="-mt-10 space-y-6 px-5">
+      <div className="relative z-20 -mt-8 space-y-6 px-5">
         {/* ─── ติดต่อเกี่ยวกับการขึ้นรถ ─── */}
         <section className="rounded-3xl bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-base font-bold text-slate-800">
@@ -134,9 +145,7 @@ export default function ContactPage() {
                 <h3 className="text-lg font-bold text-slate-800">
                   {office.name}
                 </h3>
-                <p className="mt-1 text-sm text-slate-700">
-                  {office.company}
-                </p>
+                <p className="mt-1 text-sm text-slate-700">{office.company}</p>
                 <p className="mt-0.5 whitespace-pre-line text-sm text-slate-600">
                   {office.address}
                 </p>
@@ -158,9 +167,7 @@ export default function ContactPage() {
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100">
               <Clock size={14} className="text-blue-500" />
             </div>
-            <p className="text-sm font-semibold text-blue-500">
-              เวลาทำการ
-            </p>
+            <p className="text-sm font-semibold text-blue-500">เวลาทำการ</p>
           </div>
 
           <div className="mt-3 space-y-2 pl-10">
@@ -172,9 +179,7 @@ export default function ContactPage() {
                 <span className="text-slate-600">{h.day}</span>
                 <span
                   className={
-                    h.time === 'ปิดทำการ'
-                      ? 'text-red-500'
-                      : 'text-slate-700'
+                    h.time === "ปิดทำการ" ? "text-red-500" : "text-slate-700"
                   }
                 >
                   {h.time}
@@ -185,7 +190,7 @@ export default function ContactPage() {
         </section>
       </div>
     </div>
-  )
+  );
 }
 
 /* ─── Contact Card ─── */
@@ -194,12 +199,12 @@ function ContactCard({
   onCall,
   onEmail,
 }: {
-  contact: Contact
-  onCall: () => void
-  onEmail: () => void
+  contact: Contact;
+  onCall: () => void;
+  onEmail: () => void;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,0.06)]">
+    <div className="flex items-center gap-4 rounded-2xl bg-white p-4  border border-slate-200">
       {/* Avatar */}
       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-slate-200" />
 
@@ -208,9 +213,7 @@ function ContactCard({
         <p className="text-sm font-bold text-slate-800 whitespace-nowrap">
           {contact.name}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500">
-          {contact.vendor}
-        </p>
+        <p className="mt-0.5 text-xs text-slate-500">{contact.vendor}</p>
         <p className="mt-1 text-xs font-bold text-blue-500 whitespace-nowrap">
           {contact.phone}
         </p>
@@ -244,5 +247,5 @@ function ContactCard({
         </div>
       </div>
     </div>
-  )
+  );
 }
