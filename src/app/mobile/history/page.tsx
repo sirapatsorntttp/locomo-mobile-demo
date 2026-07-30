@@ -260,7 +260,7 @@ function BookingCard({
       <div className="flex items-center gap-3">
         <div
           className={`w-12 h-12 rounded-xl ${codeBg} flex items-center justify-center 
-            text-white font-bold text-sm flex-shrink-0`}
+            text-white font-bold text-[12px] flex-shrink-0`}
         >
           {routeCode}
         </div>

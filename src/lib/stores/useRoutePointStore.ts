@@ -16,7 +16,7 @@ function normalizePoint(p: any): Point {
 export type RouteState = {
   routes: Route[]
   points: Point[]
-  loadRoutesPoints: () => Promise<void>
+  loadRoutesPoints: (force?: boolean) => Promise<void>
   addRoute: (data: Partial<Route>) => Promise<void>
   updateRoute: (id: string, data: Partial<Route>) => Promise<void>
   deleteRoute: (id: string) => Promise<void>
@@ -31,15 +31,22 @@ export const useRoutePointStore = create<RouteState>((set, get) => ({
   routes: [],
   points: [],
 
-  loadRoutesPoints: async () => {
-    try {
-      const headers = authHeader()
-      const [rRes, pRes] = await Promise.all([apiFetch('/api/routes?limit=200&page=1', { headers }), apiFetch('/api/points?limit=500&page=1', { headers })])
-      const [rJson, pJson] = await Promise.all([rRes.json(), pRes.json()])
-      if (rJson.success) set({ routes: rJson.data.data ?? [] })
-      if (pJson.success) set({ points: (pJson.data.data ?? []).map(normalizePoint) })
-    } catch { /* keep current state */ }
-  },
+ loadRoutesPoints: async (force = false) => {
+  // cache-first: มีข้อมูลแล้ว + ไม่ได้บังคับ → ข้าม (กันยิงซ้ำทุกครั้งที่เข้าหน้า)
+  const { routes, points } = get()
+  if (!force && routes.length > 0 && points.length > 0) return
+
+  try {
+    const headers = authHeader()
+    const [rRes, pRes] = await Promise.all([
+      apiFetch('/api/routes', { headers }),
+      apiFetch('/api/points', { headers }),
+    ])
+    const [rJson, pJson] = await Promise.all([rRes.json(), pRes.json()])
+    if (rJson.success) set({ routes: rJson.data.data ?? [] })
+    if (pJson.success) set({ points: (pJson.data.data ?? []).map(normalizePoint) })
+  } catch { /* keep current state */ }
+},
 
   addRoute: async (data) => {
     const mainStore = useStore.getState()

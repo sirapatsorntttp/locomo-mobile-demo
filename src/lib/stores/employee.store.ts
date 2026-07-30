@@ -11,7 +11,7 @@ export const BACKEND_URL =process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localho
   employees: EmployeeFull[]
   employeeLoading: boolean
 
-  loadEmployees: () => Promise<void>
+ loadEmployees: (force?: boolean) => Promise<void>
   addEmployee: (data: Partial<EmployeeFull> & { defaults?: any; transportDefaults?: any[] }) => Promise<void>
   updateEmployee: (id: string, data: Partial<EmployeeFull> & { transportDefaults?: any[] }) => Promise<void>
   deleteEmployee: (id: string) => Promise<void>
@@ -22,34 +22,36 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
   employees: [],
   employeeLoading: false,
 
-  loadEmployees: async () => {
-    try {
-      set({ employeeLoading: true })
+ loadEmployees: async (force = false) => {         
+  if (!force && get().employees.length > 0) return
 
-      const plantIds = isSuperAdmin() ? [] : getPlantIds()
-      const plantQuery = plantIds.length ? `&company_plant_ids=${plantIds.join(',')}` : ''
+  try {
+    set({ employeeLoading: true })
 
-      const res = await apiFetch(`/api/employees?limit=500${plantQuery}`, {
-        headers: authHeader(),
+    const plantIds = isSuperAdmin() ? [] : getPlantIds()
+    const plantQuery = plantIds.length ? `&company_plant_ids=${plantIds.join(',')}` : ''
+
+    const res = await apiFetch(`/api/employees?limit=500${plantQuery}`, {
+      headers: authHeader(),
+    })
+
+    const json = await res.json()
+    const raw: any[] = json.data?.data ?? json.data ?? []
+
+    if (json.success && Array.isArray(raw)) {
+      set({
+        employees: raw.map((e: any) => ({
+          ...e,
+          transport_defaults: Array.isArray(e.transport_defaults)
+            ? e.transport_defaults
+            : [],
+        })),
       })
-
-      const json = await res.json()
-      const raw: any[] = json.data?.data ?? json.data ?? []
-
-      if (json.success && Array.isArray(raw)) {
-        set({
-          employees: raw.map((e: any) => ({
-            ...e,
-            transport_defaults: Array.isArray(e.transport_defaults)
-              ? e.transport_defaults
-              : [],
-          })),
-        })
-      }
-    } finally {
-      set({ employeeLoading: false })
     }
-  },
+  } finally {
+    set({ employeeLoading: false })
+  }
+},
 
 addEmployee: async (data) => {
   const mainStore = useStore.getState()
@@ -152,7 +154,7 @@ addEmployee: async (data) => {
 
       mainStore.addToast('success', 'อัปเดตข้อมูลพนักงานสำเร็จ')
       mainStore.closeModal()
-      await get().loadEmployees()
+     await get().loadEmployees(true)
     } catch (err: any) {
       mainStore.addToast('error', err.message ?? 'เกิดข้อผิดพลาด')
       throw err
