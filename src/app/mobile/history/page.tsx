@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  MapPin,
   Calendar,
   User,
   CheckCircle2,
@@ -12,31 +11,67 @@ import {
 } from "lucide-react";
 import BookingDialog from "@/components/modals/BookingDialog";
 import { useUIStore } from "@/lib/store";
-import { mockHistory, type BookingStatus } from "@/lib/mockData";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useEmployeeStore } from "@/lib/stores/employee.store";
+import { useReserveStore } from "@/lib/stores/reserve.store";
+import type { Reserve } from "@/types";
 
 type TabType = "pending" | "approved" | "cancelled";
 
+// map tab (UI) -> is_state (DB)
+const tabToStates: Record<TabType, string[]> = {
+  pending: ["waiting"],
+  approved: ["approved", "finished"],
+  cancelled: ["canceled"],
+};
+
+// map is_state (DB) -> tab (UI) สำหรับ badge
+const stateToTab = (state: string): TabType => {
+  if (state === "waiting") return "pending";
+  if (state === "approved" || state === "finished") return "approved";
+  return "cancelled"; // canceled
+};
+
 export default function HistoryPage() {
-  const [tab, setTab] = useState<TabType>("approved");
+  const [tab, setTab] = useState<TabType>("pending");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const filtered = mockHistory.filter((h) => h.status === tab);
-  const selectedBooking = mockHistory.find((h) => h.id === selectedId);
   const openMenu = useUIStore((s) => s.openMenu);
+  const { profile } = useAuthStore();
+  const { employees, loadEmployees } = useEmployeeStore();
+  const { reserves, loadReserves } = useReserveStore();
+
+  // หา employee ตัวเองจาก code
+  const currentEmployee = employees.find((e) => e.code === profile?.code);
+
+  useEffect(() => {
+    loadEmployees();
+  }, [loadEmployees]);
+
+  // โหลด reserve เฉพาะของ employee ตัวเอง (ยิงเมื่อรู้ id แล้ว)
+  useEffect(() => {
+    if (currentEmployee?.id) {
+      loadReserves({ employee_id: currentEmployee.id });
+    }
+  }, [currentEmployee?.id, loadReserves]);
+
+  const filtered = useMemo(
+    () => reserves.filter((r) => tabToStates[tab].includes(r.is_state)),
+    [reserves, tab],
+  );
+
+  const selectedBooking = reserves.find((r) => r.id === selectedId);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* ─── Header (bg image + overlay) ─── */}
+      {/* ─── Header ─── */}
       <div
         className="relative rounded-b-[40px] px-7 pt-12 pb-16 overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: "url('/images/bg.jpg')" }}
       >
-        {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
 
-        {/* Content */}
         <div className="relative z-10">
-          {/* Row: Title + Menu */}
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold text-white drop-shadow-md">
@@ -59,7 +94,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ─── Tabs (ลอยทับ header) ─── */}
+      {/* ─── Tabs ─── */}
       <div className="relative z-20 -mt-8 mx-5">
         <div className="flex items-center rounded-full bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
           <TabButton
@@ -137,9 +172,11 @@ function BookingCard({
   item,
   onClick,
 }: {
-  item: (typeof mockHistory)[0];
+  item: Reserve;
   onClick?: () => void;
 }) {
+  const uiTab = stateToTab(item.is_state);
+
   const statusConfig = {
     pending: {
       label: "รออนุมัติ",
@@ -147,7 +184,7 @@ function BookingCard({
       className: "bg-amber-100 text-amber-700",
     },
     approved: {
-      label: "อนุมัติแล้ว",
+      label: item.is_state === "finished" ? "เสร็จสิ้น" : "อนุมัติแล้ว",
       icon: <CheckCircle2 size={12} />,
       className: "bg-green-100 text-green-700",
     },
@@ -157,14 +194,61 @@ function BookingCard({
       className: "bg-red-100 text-red-600",
     },
   };
-
-  const status = statusConfig[item.status];
+  const status = statusConfig[uiTab];
 
   const codeBg = {
     pending: "bg-amber-500",
     approved: "bg-green-500",
     cancelled: "bg-red-500",
-  }[item.status];
+  }[uiTab];
+
+  // route ดึงผ่าน point (Reserve ไม่มี field route ตรงๆ)
+  const route = item.route;
+  const routeCode = route?.code ?? "-";
+  const routeName = route?.name_th || route?.name_en || "ยังไม่ได้กำหนดเส้นทาง";
+  const pointName = item.point?.name_th || item.point?.name_en || "";
+
+  // travel_date -> "3 พ.ค. 2569"
+  const formatDate = (iso?: string) => {
+    if (!iso) return "-";
+    const d = new Date(iso);
+    const months = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+  };
+
+  const fmtTime = (t?: string) => {
+    if (!t) return "";
+    const d = new Date(t);
+    if (!isNaN(d.getTime())) {
+      return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+    }
+    return t.slice(0, 5);
+  };
+
+  const timeText = fmtTime(item.shift?.default_time);
+  const dirText =
+    item.shift?.trip_direction === "inbound"
+      ? "รับเข้า"
+      : item.shift?.trip_direction === "outbound"
+        ? "รับออก"
+        : "";
+
+  const empCode = item.employee?.code ?? "";
+  const empName =
+    `${item.employee?.first_name_th ?? ""} ${item.employee?.last_name_th ?? ""}`.trim();
 
   return (
     <button
@@ -174,25 +258,22 @@ function BookingCard({
     >
       {/* Row 1: Code + Route Name + Status */}
       <div className="flex items-center gap-3">
-        {/* Code Badge */}
         <div
           className={`w-12 h-12 rounded-xl ${codeBg} flex items-center justify-center 
             text-white font-bold text-sm flex-shrink-0`}
         >
-          {item.routeCode}
+          {routeCode}
         </div>
 
-        {/* Route Name */}
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold text-slate-800 truncate">
-            {item.from} - {item.to}
+            {routeName}
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
-            รหัสสาย {item.routeCode}
+            {pointName ? `จุดรับส่ง ${pointName}` : `รหัสสาย ${routeCode}`}
           </p>
         </div>
 
-        {/* Status Badge */}
         <span
           className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold flex-shrink-0 ${status.className}`}
         >
@@ -208,19 +289,28 @@ function BookingCard({
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 text-slate-600">
           <Calendar size={14} className="flex-shrink-0 text-slate-400" />
-          <p className="text-xs ">
-            {item.date}
-            <span className="ml-2 text-slate-400">•</span>
-            <span className="ml-2">{item.time}</span>
+          <p className="text-xs">
+            {formatDate(item.travel_date)}
+            {timeText && (
+              <>
+                <span className="ml-2 text-slate-400">•</span>
+                <span className="ml-2">{timeText}</span>
+              </>
+            )}
+            {dirText && (
+              <>
+                <span className="ml-2 text-slate-400">•</span>
+                <span className="ml-2 text-orange-500">{dirText}</span>
+              </>
+            )}
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-slate-600">
           <User size={14} className="flex-shrink-0 text-slate-400" />
-
           <p className="text-xs">
-            <span>{item.empCode}</span>
-            <span className="ml-2">{item.empName}</span>
+            <span>{empCode}</span>
+            <span className="ml-2">{empName}</span>
           </p>
         </div>
       </div>

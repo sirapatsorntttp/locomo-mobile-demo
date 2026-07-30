@@ -26,6 +26,7 @@ type ReserveState = {
     remark?: string
   }) => Promise<{ created: number; updated: number; skipped: number; blocked: number }>
   updateReserveState: (id: string, state: ReserveStatus) => Promise<void>
+ 
   deleteReserve: (id: string) => Promise<void>
   bulkApprove: (ids: string[]) => Promise<void>
   bulkCancelReserves: (ids: string[]) => Promise<void>
@@ -39,6 +40,8 @@ function normalizeReserve(r: any): Reserve {
     employee:              r.employees   ?? r.employee   ?? undefined,
     shift:                 r.shifts      ?? r.shift      ?? undefined,
     point:                 r.points      ?? r.point      ?? undefined,
+    route: r.routes ?? r.route ?? undefined,
+    route_id: r.route_id ?? '',
     policy:                r.booking_policies ?? r.policy ?? undefined,
     plant_company_zone_id: r.plant_company_zone_id ?? '',
     platform:              r.platform  ?? 'web',
@@ -174,6 +177,7 @@ export const useReserveStore = create<ReserveState>((set, get) => ({
     mainStore.closeModal()
     return { created, updated, skipped, blocked }
   },
+
 
   updateReserveState: async (id, state) => {
      const mainStore = useStore.getState()

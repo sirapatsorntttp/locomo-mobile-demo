@@ -20,6 +20,8 @@ export async function GET(request: Request) {
   const result = await backendFetch<PaginatedResult<Reserve>>(`/reserves?${query}`, {
     headers: { Authorization: auth },
   })
+
+  
   if (!result.ok) return apiError(result.error, result.status)
   return apiSuccess(result.data)
 }

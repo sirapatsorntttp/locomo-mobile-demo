@@ -1,40 +1,40 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useUIStore } from '@/lib/store'
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useUIStore } from "@/lib/store";
 
 /* ─── Types ─── */
 export interface ExistingBooking {
-  id: string
-  startDate: string // 'YYYY-MM-DD'
-  endDate: string
-  status: 'booked' | 'cancelled'
+  id: string;
+  startDate: string; // 'YYYY-MM-DD'
+  endDate: string;
+  status: "booked" | "cancelled";
 }
 
 interface Props {
-  startDate: Date
-  endDate: Date
-  existingBookings?: ExistingBooking[]
-  onClose: () => void
-  onConfirm: (start: Date, end: Date) => void
+  startDate: Date;
+  endDate: Date;
+  existingBookings?: ExistingBooking[];
+  onClose: () => void;
+  onConfirm: (start: Date, end: Date) => void;
 }
 
 /* ─── Helpers ─── */
 const toKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
-  ).padStart(2, '0')}`
+  ).padStart(2, "0")}`;
 
 const parseKey = (key: string) => {
-  const [y, m, d] = key.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
 
 const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate()
+  a.getDate() === b.getDate();
 
 /* ─── Component ─── */
 export default function CalendarDialog({
@@ -44,96 +44,118 @@ export default function CalendarDialog({
   onClose,
   onConfirm,
 }: Props) {
-  const { openDialog, closeDialog } = useUIStore()
+  const { openDialog, closeDialog } = useUIStore();
 
-  const [viewMonth, setViewMonth] = useState(startDate.getMonth())
-  const [viewYear, setViewYear] = useState(startDate.getFullYear())
-  const [tempStart, setTempStart] = useState<Date | null>(startDate)
-  const [tempEnd, setTempEnd] = useState<Date | null>(endDate)
+  const [viewMonth, setViewMonth] = useState(startDate.getMonth());
+  const [viewYear, setViewYear] = useState(startDate.getFullYear());
+  const [tempStart, setTempStart] = useState<Date | null>(startDate);
+  const [tempEnd, setTempEnd] = useState<Date | null>(endDate);
+  const [selecting, setSelecting] = useState(false);
 
   useEffect(() => {
-    openDialog()
-    document.body.style.overflow = 'hidden'
+    openDialog();
+    document.body.style.overflow = "hidden";
     return () => {
-      closeDialog()
-      document.body.style.overflow = ''
-    }
-  }, [openDialog, closeDialog])
+      closeDialog();
+      document.body.style.overflow = "";
+    };
+  }, [openDialog, closeDialog]);
 
   /* ─── สร้าง map ของวันที่ถูกจอง / ยกเลิก ─── */
   const bookingMap = useMemo(() => {
-    const map = new Map<string, ExistingBooking>()
+    const map = new Map<string, ExistingBooking>();
 
     existingBookings.forEach((b) => {
-      const start = parseKey(b.startDate)
-      const end = parseKey(b.endDate)
+      const start = parseKey(b.startDate);
+      const end = parseKey(b.endDate);
 
-      const cur = new Date(start)
+      const cur = new Date(start);
       while (cur <= end) {
-        map.set(toKey(cur), b)
-        cur.setDate(cur.getDate() + 1)
+        map.set(toKey(cur), b);
+        cur.setDate(cur.getDate() + 1);
       }
-    })
+    });
 
-    return map
-  }, [existingBookings])
+    return map;
+  }, [existingBookings]);
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ]
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay()
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
   const prevMonth = () => {
     if (viewMonth === 0) {
-      setViewMonth(11)
-      setViewYear(viewYear - 1)
-    } else setViewMonth(viewMonth - 1)
-  }
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else setViewMonth(viewMonth - 1);
+  };
   const nextMonth = () => {
     if (viewMonth === 11) {
-      setViewMonth(0)
-      setViewYear(viewYear + 1)
-    } else setViewMonth(viewMonth + 1)
-  }
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else setViewMonth(viewMonth + 1);
+  };
 
   /* ─── ตรวจว่ามีวันที่ถูกจอง (booked) อยู่ในช่วงหรือไม่ ─── */
   const hasBookedInRange = (start: Date, end: Date) => {
-    const cur = new Date(start)
+    const cur = new Date(start);
     while (cur <= end) {
-      const b = bookingMap.get(toKey(cur))
-      if (b?.status === 'booked') return true
-      cur.setDate(cur.getDate() + 1)
+      const b = bookingMap.get(toKey(cur));
+      if (b?.status === "booked") return true;
+      cur.setDate(cur.getDate() + 1);
     }
-    return false
-  }
+    return false;
+  };
 
   const handleClickDate = (day: number) => {
-    const d = new Date(viewYear, viewMonth, day)
-    const existing = bookingMap.get(toKey(d))
+    const d = new Date(viewYear, viewMonth, day);
+    const existing = bookingMap.get(toKey(d));
 
-    // 🚫 ถ้ามีการจองอยู่แล้ว → กดไม่ได้
-    if (existing?.status === 'booked') return
+    // ถ้ามีการจองอยู่แล้ว → กดไม่ได้
+    if (existing?.status === "booked") return;
 
-    if (!tempStart || (tempStart && tempEnd)) {
-      setTempStart(d)
-      setTempEnd(null)
-    } else if (d < tempStart) {
-      setTempStart(d)
+    if (!selecting) {
+      // คลิกแรก → เลือกวันเดียว (start = end) ใช้ได้ทันที
+      setTempStart(d);
+      setTempEnd(d);
+      setSelecting(true);
     } else {
-      // 🚫 ถ้า range ที่จะเลือกทับช่วงที่ถูกจอง → ไม่ให้เลือก
-      if (hasBookedInRange(tempStart, d)) return
-      setTempEnd(d)
+      // คลิกที่สอง → ขยายเป็นช่วง
+      if (!tempStart) {
+        setTempStart(d);
+        setTempEnd(d);
+      } else if (d < tempStart) {
+        // คลิกก่อนวันเริ่ม → สลับเป็นวันเริ่มใหม่
+        if (hasBookedInRange(d, tempStart)) return;
+        setTempStart(d);
+      } else {
+        // คลิกหลังวันเริ่ม → ขยายเป็น end
+        if (hasBookedInRange(tempStart, d)) return;
+        setTempEnd(d);
+      }
+      setSelecting(false); // จบการเลือก (คลิกครั้งถัดไปเริ่มใหม่)
     }
-  }
+  };
 
   const isInSelectedRange = (d: Date) => {
-    if (!tempStart || !tempEnd) return false
-    return d > tempStart && d < tempEnd
-  }
+    if (!tempStart || !tempEnd) return false;
+    return d > tempStart && d < tempEnd;
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-5">
@@ -168,9 +190,7 @@ export default function CalendarDialog({
           {dayNames.map((d, i) => (
             <div
               key={d}
-              className={
-                i === 0 || i === 6 ? 'text-red-400' : 'text-slate-500'
-              }
+              className={i === 0 || i === 6 ? "text-red-400" : "text-slate-500"}
             >
               {d}
             </div>
@@ -184,36 +204,39 @@ export default function CalendarDialog({
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1
-            const currentDate = new Date(viewYear, viewMonth, day)
-            const dow = currentDate.getDay()
-            const key = toKey(currentDate)
-            const existing = bookingMap.get(key)
+            const day = i + 1;
+            const currentDate = new Date(viewYear, viewMonth, day);
+            const dow = currentDate.getDay();
+            const key = toKey(currentDate);
+            const existing = bookingMap.get(key);
 
-            const isBooked = existing?.status === 'booked'
-            const isCancelled = existing?.status === 'cancelled'
+            const isBooked = existing?.status === "booked";
+            const isCancelled = existing?.status === "cancelled";
 
-            const isStart = tempStart && isSameDay(currentDate, tempStart)
-            const isEnd = tempEnd && isSameDay(currentDate, tempEnd)
-            const isEndpoint = isStart || isEnd
-            const inSelected = isInSelectedRange(currentDate)
+            const isStart = tempStart && isSameDay(currentDate, tempStart);
+            const isEnd = tempEnd && isSameDay(currentDate, tempEnd);
+            const isEndpoint = isStart || isEnd;
+            const inSelected = isInSelectedRange(currentDate);
 
             /* ─── ตรวจตำแหน่งใน range ที่ถูกจอง เพื่อวาดไฮไลท์ pill ─── */
-            const prev = new Date(viewYear, viewMonth, day - 1)
-            const next = new Date(viewYear, viewMonth, day + 1)
+            const prev = new Date(viewYear, viewMonth, day - 1);
+            const next = new Date(viewYear, viewMonth, day + 1);
             const prevBooked =
-              bookingMap.get(toKey(prev))?.status === 'booked' && isBooked
+              bookingMap.get(toKey(prev))?.status === "booked" && isBooked;
             const nextBooked =
-              bookingMap.get(toKey(next))?.status === 'booked' && isBooked
+              bookingMap.get(toKey(next))?.status === "booked" && isBooked;
 
             const bookedRounding = isBooked
-              ? `${!prevBooked ? 'rounded-l-full' : ''} ${
-                  !nextBooked ? 'rounded-r-full' : ''
+              ? `${!prevBooked ? "rounded-l-full" : ""} ${
+                  !nextBooked ? "rounded-r-full" : ""
                 }`
-              : ''
+              : "";
 
             return (
-              <div key={day} className="relative flex items-center justify-center">
+              <div
+                key={day}
+                className="relative flex items-center justify-center"
+              >
                 {/* ─── Layer: Booked pill (ไฮไลท์ช่วงจองเดิม) ─── */}
                 {isBooked && (
                   <span
@@ -227,14 +250,14 @@ export default function CalendarDialog({
                   disabled={isBooked}
                   className={`relative z-10 flex aspect-square w-full items-center justify-center rounded-xl text-sm transition-all ${
                     isEndpoint
-                      ? 'bg-blue-600 font-bold text-white shadow-md'
+                      ? "bg-blue-600 font-bold text-white shadow-md"
                       : inSelected
-                        ? 'bg-blue-200 text-blue-800'
+                        ? "bg-blue-200 text-blue-800"
                         : isBooked
-                          ? 'cursor-not-allowed font-semibold text-blue-700'
+                          ? "cursor-not-allowed font-semibold text-blue-700"
                           : dow === 0 || dow === 6
-                            ? 'text-red-400 hover:bg-slate-100'
-                            : 'text-slate-700 hover:bg-slate-100'
+                            ? "text-red-400 hover:bg-slate-100"
+                            : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {day}
@@ -245,7 +268,7 @@ export default function CalendarDialog({
                   )}
                 </button>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -284,5 +307,5 @@ export default function CalendarDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }

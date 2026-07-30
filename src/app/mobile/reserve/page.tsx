@@ -19,57 +19,70 @@ import EditRouteDialog, {
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useEmployeeStore } from "@/lib/stores/employee.store";
 import { useRoutePointStore } from "@/lib/stores/useRoutePointStore";
-import type { EmployeeFull, EmployeeTransportDefault, Language } from "@/types";
+import { useShiftStore } from "@/lib/stores/shift.store";
+import { useReserveStore } from "@/lib/stores/reserve.store";
+import type {
+  EmployeeFull,
+  EmployeeTransportDefault,
+  Language,
+  Shift,
+} from "@/types";
 
 type BookingType = "normal" | "ot";
 type RouteType = "round" | "oneway";
-type Direction = "in" | "out";
-
-interface Shift {
-  id: string;
-  time: string;
-  direction: Direction;
-}
-
-// รอบไป-กลับ
-const roundShifts: Shift[] = [
-  { id: "r1", time: "8.00 - 17.00", direction: "in" },
-  { id: "r2", time: "7.00 - 16.00", direction: "in" },
-  { id: "r3", time: "9.00 - 18.00", direction: "in" },
-  { id: "r4", time: "7.00 - 16.00", direction: "in" },
-  { id: "r5", time: "9.00 - 18.00", direction: "in" },
-];
-
-// รอบขาเดียว
-const onewayShifts: Shift[] = [
-  { id: "in-08", time: "08:00", direction: "in" },
-  { id: "in-20", time: "20:00", direction: "in" },
-  { id: "out-17", time: "17:00", direction: "out" },
-  { id: "out-19", time: "19:00", direction: "out" },
-  { id: "out-05", time: "05:00", direction: "out" },
-  { id: "out-07", time: "07:00", direction: "out" },
-];
 
 type UILang = "TH" | "EN";
 const toApiLang = (l: UILang): Language => (l === "TH" ? "th" : "en");
+
+// bookingType (UI) -> shift.type (DB)
+const bookingTypeToShiftType = (b: BookingType) =>
+  b === "ot" ? "overtime" : "regular";
+
+// "06:00:00" -> "06:00"
+const shiftTimeText = (s: Shift) =>
+  s.default_time ? s.default_time.slice(0, 5) : (s.code ?? "");
+
+// Date -> "YYYY-MM-DD" แบบ local (ห้ามใช้ toISOString ตรงๆ เพราะ +7 เพี้ยนวัน)
+const toISODate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const getDateRange = (start: Date, end: Date) => {
+  const dates: string[] = [];
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  while (cur <= last) {
+    dates.push(toISODate(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+};
 
 export default function ReservePage() {
   const openMenu = useUIStore((s) => s.openMenu);
   const router = useRouter();
 
   const { profile } = useAuthStore();
-  const { employees, employeeLoading, updateEmployee, loadEmployees } =
-    useEmployeeStore();
+  const { employees, updateEmployee, loadEmployees } = useEmployeeStore();
   const { routes, points, loadRoutesPoints } = useRoutePointStore();
+  const { shifts, loadShifts } = useShiftStore();
+  const { bulkAddReserves } = useReserveStore();
 
   const [lang] = useState<UILang>("TH");
   const [bookingType, setBookingType] = useState<BookingType>("normal");
   const [routeType, setRouteType] = useState<RouteType>("round");
-  const [shiftId, setShiftId] = useState("r1");
-  const [note, setNote] = useState("");
 
+  const [inboundShiftId, setInboundShiftId] = useState<string>("");
+  const [outboundShiftId, setOutboundShiftId] = useState<string>("");
+  const [onewayShiftId, setOnewayShiftId] = useState<string>("");
+
+  const [note, setNote] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
 
   const [startDate, setStartDate] = useState<Date>(new Date(2026, 4, 3));
   const [endDate, setEndDate] = useState<Date>(new Date(2026, 4, 3));
@@ -80,7 +93,42 @@ export default function ReservePage() {
   useEffect(() => {
     loadEmployees();
     loadRoutesPoints();
-  }, [loadEmployees, loadRoutesPoints]);
+    loadShifts();
+  }, [loadEmployees, loadRoutesPoints, loadShifts]);
+
+  // กรอง shift ตามประเภทการจอง (regular / overtime) ก่อน
+  const shiftsByType = useMemo(
+    () => shifts.filter((s) => s.type === bookingTypeToShiftType(bookingType)),
+    [shifts, bookingType],
+  );
+
+  const inboundShifts = useMemo(
+    () => shiftsByType.filter((s) => s.trip_direction === "inbound"),
+    [shiftsByType],
+  );
+  const outboundShifts = useMemo(
+    () => shiftsByType.filter((s) => s.trip_direction === "outbound"),
+    [shiftsByType],
+  );
+
+  // set default / เคลียร์ค่าที่หลุดจากลิสต์เมื่อเปลี่ยนประเภทการจอง
+  useEffect(() => {
+    setInboundShiftId((prev) =>
+      inboundShifts.some((s) => s.id === prev)
+        ? prev
+        : (inboundShifts[0]?.id ?? ""),
+    );
+    setOutboundShiftId((prev) =>
+      outboundShifts.some((s) => s.id === prev)
+        ? prev
+        : (outboundShifts[0]?.id ?? ""),
+    );
+    setOnewayShiftId((prev) =>
+      shiftsByType.some((s) => s.id === prev)
+        ? prev
+        : (shiftsByType[0]?.id ?? ""),
+    );
+  }, [inboundShifts, outboundShifts, shiftsByType]);
 
   // หา employee ตัวเองจาก code
   const currentEmployee: EmployeeFull | undefined = employees.find(
@@ -95,9 +143,8 @@ export default function ReservePage() {
     (t) => t.trip_direction === "outbound",
   );
 
-  const currentShifts = routeType === "round" ? roundShifts : onewayShifts;
-  const selectedShift = currentShifts.find((s) => s.id === shiftId);
-  const selectedDirection = selectedShift?.direction;
+  const onewaySelected = shiftsByType.find((s) => s.id === onewayShiftId);
+  const onewayDirection = onewaySelected?.trip_direction;
 
   const formatDate = (d: Date) => {
     const months = [
@@ -142,18 +189,48 @@ export default function ReservePage() {
 
   const existingBookings = useMemo(() => toExistingBookings(mockHistory), []);
 
-  const handleSave = () => {
-    console.log("บันทึก:", {
-      bookingType,
-      routeType,
-      shiftId,
-      startDate,
-      endDate,
-      note,
-      inbound,
-      outbound,
-    });
-    router.push("/mobile/history");
+  const handleSave = async () => {
+    if (!currentEmployee?.id) {
+      console.error("ไม่พบ employee id");
+      return;
+    }
+
+    let legs: Array<{ shift_id: string; point_mode: "default" | "override" }> =
+      [];
+
+    if (routeType === "round") {
+      if (!inboundShiftId || !outboundShiftId) {
+        console.error("ยังเลือกรอบขาเข้า/ขาออกไม่ครบ");
+        return;
+      }
+      legs = [
+        { shift_id: inboundShiftId, point_mode: "default" },
+        { shift_id: outboundShiftId, point_mode: "default" },
+      ];
+    } else {
+      if (!onewayShiftId) {
+        console.error("ยังไม่ได้เลือกรอบเดินทาง");
+        return;
+      }
+      legs = [{ shift_id: onewayShiftId, point_mode: "default" }];
+    }
+
+    const travel_dates = getDateRange(startDate, endDate);
+
+    try {
+      setBookingSubmitting(true);
+      await bulkAddReserves({
+        employee_ids: [currentEmployee.id],
+        trip_mode: routeType === "round" ? "round_trip" : "one_way",
+        legs,
+        travel_dates,
+        remark: note || undefined,
+      });
+      // record ใหม่ = is_state 'waiting' (รออนุมัติ) อัตโนมัติ
+      router.push("/mobile/history");
+    } finally {
+      setBookingSubmitting(false);
+    }
   };
 
   const handleCancel = () => router.back();
@@ -163,7 +240,6 @@ export default function ReservePage() {
       console.error("ไม่พบ employee id");
       return;
     }
-
     try {
       setSaving(true);
       await updateEmployee(currentEmployee.id, {
@@ -187,6 +263,9 @@ export default function ReservePage() {
       setSaving(false);
     }
   };
+
+  const showInbound = routeType === "round" || onewayDirection === "inbound";
+  const showOutbound = routeType === "round" || onewayDirection === "outbound";
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -274,24 +353,67 @@ export default function ReservePage() {
           </section>
 
           {/* Shifts */}
-          <section>
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              {currentShifts.map((s) => (
-                <ShiftCard
-                  key={s.id}
-                  selected={shiftId === s.id}
-                  onClick={() => setShiftId(s.id)}
-                  time={s.time}
-                  direction={s.direction}
-                  routeType={routeType}
-                />
-              ))}
-            </div>
-          </section>
+          {routeType === "round" ? (
+            <>
+              <section>
+                <h2 className="mb-3 text-sm font-bold text-slate-800">
+                  เลือกรอบขาเข้า{" "}
+                  <span className="text-orange-500">รับเข้า</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {inboundShifts.map((s) => (
+                    <ShiftCard
+                      key={s.id}
+                      selected={inboundShiftId === s.id}
+                      onClick={() => setInboundShiftId(s.id)}
+                      time={shiftTimeText(s)}
+                      topText="รับเข้า"
+                    />
+                  ))}
+                  {inboundShifts.length === 0 && <EmptyShift />}
+                </div>
+              </section>
+
+              <section>
+                <h2 className="mb-3 text-sm font-bold text-slate-800">
+                  เลือกรอบขาออก <span className="text-orange-500">รับออก</span>
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {outboundShifts.map((s) => (
+                    <ShiftCard
+                      key={s.id}
+                      selected={outboundShiftId === s.id}
+                      onClick={() => setOutboundShiftId(s.id)}
+                      time={shiftTimeText(s)}
+                      topText="รับออก"
+                    />
+                  ))}
+                  {outboundShifts.length === 0 && <EmptyShift />}
+                </div>
+              </section>
+            </>
+          ) : (
+            <section>
+              <div className="grid grid-cols-3 gap-3">
+                {shiftsByType.map((s) => (
+                  <ShiftCard
+                    key={s.id}
+                    selected={onewayShiftId === s.id}
+                    onClick={() => setOnewayShiftId(s.id)}
+                    time={shiftTimeText(s)}
+                    topText={
+                      s.trip_direction === "inbound" ? "รับเข้า" : "รับออก"
+                    }
+                  />
+                ))}
+                {shiftsByType.length === 0 && <EmptyShift />}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* รับเข้า */}
-        {(routeType === "round" || selectedDirection === "in") && (
+        {showInbound && (
           <div className="rounded-2xl bg-white p-5 shadow-sm space-y-4">
             <RouteField
               title="สายรถ"
@@ -315,7 +437,7 @@ export default function ReservePage() {
         )}
 
         {/* รับออก */}
-        {(routeType === "round" || selectedDirection === "out") && (
+        {showOutbound && (
           <div className="rounded-2xl bg-white p-5 shadow-sm space-y-4">
             <RouteField
               title="สายรถ"
@@ -358,15 +480,17 @@ export default function ReservePage() {
         <div className="space-y-3">
           <button
             type="button"
-            className="w-full rounded-2xl bg-blue-600 py-3.5 font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98]"
+            className="w-full rounded-2xl bg-blue-600 py-3.5 font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60"
             onClick={handleSave}
+            disabled={bookingSubmitting}
           >
-            บันทึก
+            {bookingSubmitting ? "กำลังบันทึก..." : "บันทึก"}
           </button>
           <button
             type="button"
             onClick={handleCancel}
-            className="w-full rounded-2xl bg-orange-500 py-3.5 font-bold text-white shadow-md transition hover:bg-orange-600 active:scale-[0.98]"
+            disabled={bookingSubmitting}
+            className="w-full rounded-2xl bg-orange-500 py-3.5 font-bold text-white shadow-md transition hover:bg-orange-600 active:scale-[0.98] disabled:opacity-60"
           >
             ยกเลิก
           </button>
@@ -488,22 +612,13 @@ function ShiftCard({
   selected,
   onClick,
   time,
-  direction,
-  routeType,
+  topText,
 }: {
   selected: boolean;
   onClick: () => void;
   time: string;
-  direction: Direction;
-  routeType: RouteType;
+  topText: string;
 }) {
-  const topText =
-    routeType === "round"
-      ? "ไป-กลับ"
-      : direction === "in"
-        ? "รับเข้า"
-        : "รับออก";
-
   return (
     <button
       type="button"
@@ -521,6 +636,14 @@ function ShiftCard({
       <p className="text-[11px] font-semibold text-slate-600">{topText}</p>
       <p className="text-[11px] text-slate-500">{time}</p>
     </button>
+  );
+}
+
+function EmptyShift() {
+  return (
+    <p className="col-span-3 py-4 text-center text-xs text-slate-400">
+      ยังไม่มีรอบเดินทาง
+    </p>
   );
 }
 

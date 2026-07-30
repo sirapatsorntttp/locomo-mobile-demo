@@ -20,13 +20,19 @@ export async function PATCH(request: Request,
 }
 
 // DELETE /api/reserves/:id — soft cancel
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },  
+) {
+  const { id } = await params                     
   const auth = request.headers.get('Authorization') ?? ''
 
-  const result = await backendFetch<Reserve>(`/reserves/${params.id}`, {
+  const result = await backendFetch<Reserve>(`/reserves/${id}`, {
     method: 'DELETE',
     headers: { Authorization: auth },
   })
+
   if (!result.ok) return apiError(result.error, result.status)
   return apiSuccess(result.data)
 }

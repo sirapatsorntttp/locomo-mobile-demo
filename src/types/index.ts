@@ -272,6 +272,7 @@ export interface Shift extends BaseEntity {
   trip_direction: ShiftDirection; default_time: string
   shift_group_id: string | null; shift_groups?: ShiftGroup | null
   company_plant_id: string | null
+  
 }
 
 export interface Post extends BaseEntity {
@@ -288,6 +289,7 @@ export interface Reserve extends BaseEntity {
   employee_id: string; employee?: Employee
   shift_id: string; shift?: Shift
   point_id: string; point?: Point
+  route_id: string; route?: Route
   plant_company_zone_id: string; plant_company_zone?: PlantCompanyZone
   working_date?: string
   travel_date: string
