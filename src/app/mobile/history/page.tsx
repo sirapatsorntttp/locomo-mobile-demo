@@ -14,22 +14,21 @@ import { useUIStore } from "@/lib/store";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useEmployeeStore } from "@/lib/stores/employee.store";
 import { useReserveStore } from "@/lib/stores/reserve.store";
+import { useLang } from "@/lib/lang-context";
 import type { Reserve } from "@/types";
 
 type TabType = "pending" | "approved" | "cancelled";
 
-// map tab (UI) -> is_state (DB)
 const tabToStates: Record<TabType, string[]> = {
   pending: ["waiting"],
   approved: ["approved", "finished"],
   cancelled: ["canceled"],
 };
 
-// map is_state (DB) -> tab (UI) สำหรับ badge
 const stateToTab = (state: string): TabType => {
   if (state === "waiting") return "pending";
   if (state === "approved" || state === "finished") return "approved";
-  return "cancelled"; // canceled
+  return "cancelled";
 };
 
 export default function HistoryPage() {
@@ -40,15 +39,14 @@ export default function HistoryPage() {
   const { profile } = useAuthStore();
   const { employees, loadEmployees } = useEmployeeStore();
   const { reserves, loadReserves } = useReserveStore();
+  const { lang, t } = useLang();
 
-  // หา employee ตัวเองจาก code
   const currentEmployee = employees.find((e) => e.code === profile?.code);
 
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
 
-  // โหลด reserve เฉพาะของ employee ตัวเอง (ยิงเมื่อรู้ id แล้ว)
   useEffect(() => {
     if (currentEmployee?.id) {
       loadReserves({ employee_id: currentEmployee.id });
@@ -64,24 +62,22 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      {/* ─── Header ─── */}
+      {/* Header */}
       <div
         className="relative rounded-b-[40px] px-7 pt-12 pb-16 overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: "url('/images/bg.jpg')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
-
         <div className="relative z-10">
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold text-white drop-shadow-md">
-                ประวัติการจอง
+                {t("history", "title")}
               </h1>
               <p className="mt-1 text-xs text-white/90 drop-shadow">
-                รายการจองทั้งหมดของคุณ
+                {t("history", "subtitle")}
               </p>
             </div>
-
             <button
               type="button"
               onClick={openMenu}
@@ -94,28 +90,28 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ─── Tabs ─── */}
+      {/* Tabs */}
       <div className="relative z-20 -mt-8 mx-5">
         <div className="flex items-center rounded-full bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
           <TabButton
-            label="รออนุมัติ"
+            label={t("history", "tabPending")}
             active={tab === "pending"}
             onClick={() => setTab("pending")}
           />
           <TabButton
-            label="อนุมัติแล้ว"
+            label={t("history", "tabApproved")}
             active={tab === "approved"}
             onClick={() => setTab("approved")}
           />
           <TabButton
-            label="ยกเลิก"
+            label={t("history", "tabCancelled")}
             active={tab === "cancelled"}
             onClick={() => setTab("cancelled")}
           />
         </div>
       </div>
 
-      {/* ─── Card List ─── */}
+      {/* Card List */}
       <div className="mt-6 space-y-3 px-5">
         {filtered.map((item) => (
           <BookingCard
@@ -127,7 +123,7 @@ export default function HistoryPage() {
 
         {filtered.length === 0 && (
           <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center">
-            <p className="text-sm text-slate-400">ไม่พบข้อมูล</p>
+            <p className="text-sm text-slate-400">{t("history", "noData")}</p>
           </div>
         )}
       </div>
@@ -175,21 +171,25 @@ function BookingCard({
   item: Reserve;
   onClick?: () => void;
 }) {
+  const { lang, t } = useLang();
   const uiTab = stateToTab(item.is_state);
 
   const statusConfig = {
     pending: {
-      label: "รออนุมัติ",
+      label: t("history", "statusPending"),
       icon: <Clock size={12} />,
       className: "bg-amber-100 text-amber-700",
     },
     approved: {
-      label: item.is_state === "finished" ? "เสร็จสิ้น" : "อนุมัติแล้ว",
+      label:
+        item.is_state === "finished"
+          ? t("history", "statusFinished")
+          : t("history", "statusApproved"),
       icon: <CheckCircle2 size={12} />,
       className: "bg-green-100 text-green-700",
     },
     cancelled: {
-      label: "ยกเลิก",
+      label: t("history", "statusCancelled"),
       icon: <XCircle size={12} />,
       className: "bg-red-100 text-red-600",
     },
@@ -202,17 +202,38 @@ function BookingCard({
     cancelled: "bg-red-500",
   }[uiTab];
 
-  // route ดึงผ่าน point (Reserve ไม่มี field route ตรงๆ)
   const route = item.route;
   const routeCode = route?.code ?? "-";
-  const routeName = route?.name_th || route?.name_en || "ยังไม่ได้กำหนดเส้นทาง";
-  const pointName = item.point?.name_th || item.point?.name_en || "";
+  const routeName =
+    (lang === "th"
+      ? route?.name_th || route?.name_en
+      : route?.name_en || route?.name_th) || t("history", "noRoute");
+  const pointName =
+    (lang === "th"
+      ? item.point?.name_th || item.point?.name_en
+      : item.point?.name_en || item.point?.name_th) || "";
 
-  // travel_date -> "3 พ.ค. 2569"
   const formatDate = (iso?: string) => {
     if (!iso) return "-";
     const d = new Date(iso);
-    const months = [
+    if (lang === "en") {
+      const monthsEn = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return `${d.getDate()} ${monthsEn[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    const monthsTh = [
       "ม.ค.",
       "ก.พ.",
       "มี.ค.",
@@ -226,7 +247,7 @@ function BookingCard({
       "พ.ย.",
       "ธ.ค.",
     ];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+    return `${d.getDate()} ${monthsTh[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
   const fmtTime = (t?: string) => {
@@ -241,14 +262,16 @@ function BookingCard({
   const timeText = fmtTime(item.shift?.default_time);
   const dirText =
     item.shift?.trip_direction === "inbound"
-      ? "รับเข้า"
+      ? t("history", "dirIn")
       : item.shift?.trip_direction === "outbound"
-        ? "รับออก"
+        ? t("history", "dirOut")
         : "";
 
   const empCode = item.employee?.code ?? "";
   const empName =
-    `${item.employee?.first_name_th ?? ""} ${item.employee?.last_name_th ?? ""}`.trim();
+    lang === "th"
+      ? `${item.employee?.first_name_th ?? ""} ${item.employee?.last_name_th ?? ""}`.trim()
+      : `${item.employee?.first_name_en ?? ""} ${item.employee?.last_name_en ?? ""}`.trim();
 
   return (
     <button
@@ -256,7 +279,7 @@ function BookingCard({
       className="w-full bg-white rounded-2xl border border-slate-200 shadow-lg p-4 text-left 
         hover:shadow-md active:scale-[0.99] transition-all"
     >
-      {/* Row 1: Code + Route Name + Status */}
+      {/* Row 1 */}
       <div className="flex items-center gap-3">
         <div
           className={`w-12 h-12 rounded-xl ${codeBg} flex items-center justify-center 
@@ -270,7 +293,9 @@ function BookingCard({
             {routeName}
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {pointName ? `จุดรับส่ง ${pointName}` : `รหัสสาย ${routeCode}`}
+            {pointName
+              ? `${t("history", "pickupPrefix")} ${pointName}`
+              : `${t("history", "routePrefix")} ${routeCode}`}
           </p>
         </div>
 
@@ -285,7 +310,7 @@ function BookingCard({
       {/* Divider */}
       <div className="border-t border-dashed border-slate-200 my-3" />
 
-      {/* Row 2: Date + Employee */}
+      {/* Row 2 */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 text-slate-600">
           <Calendar size={14} className="flex-shrink-0 text-slate-400" />

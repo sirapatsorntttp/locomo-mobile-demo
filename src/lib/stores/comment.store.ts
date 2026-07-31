@@ -22,18 +22,22 @@ export const useCommentStore = create<CommentState>((set, get) => ({
   comments: [],
   commentsTotal: 0,
 
-    loadComments: async (params = {}) => {
-      try {
-        const query = new URLSearchParams()
-        if (params.status)   query.set('status',   params.status)
-        if (params.route_id) query.set('route_id', params.route_id)
-        query.set('limit', '200')
-        query.set('page',  String(params.page ?? 1))
-        const res  = await apiFetch(`/api/comments?${query}`, { headers: authHeader() })
-        const json = await res.json()
-        if (json.success) set({ comments: json.data?.data ?? json.data ?? [], commentsTotal: json.data?.total ?? 0 })
-      } catch { /* keep current state */ }
-    },
+loadComments: async (params = {}) => {
+  try {
+    const query = new URLSearchParams()
+    if (params.status)   query.set('status',   params.status)
+    if (params.route_id) query.set('route_id', params.route_id)
+
+    const res  = await apiFetch(`/api/comments?${query}`, { headers: authHeader() })
+    const json = await res.json()
+    console.log(json);
+    
+    if (json.success) set({
+      comments: json.data?.data ?? json.data ?? [],
+      commentsTotal: json.data?.total ?? 0,
+    })
+  } catch { /* keep current state */ }
+},
   
   
   

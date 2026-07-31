@@ -6,23 +6,22 @@ import { useUIStore } from "@/lib/store";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useEmployeeStore } from "@/lib/stores/employee.store";
 import { useReserveStore } from "@/lib/stores/reserve.store";
-
+import { useCalendarStore } from "@/lib/stores/useCalendarStore";
+import { useLang } from "@/lib/lang-context";
 import ScheduleDialog from "@/components/modals/ScheduleDialog";
 import type { Reserve, Calendar } from "@/types";
-import { useCalendarStore } from "@/lib/stores/useCalendarStore";
 
 type ScheduleType = "holiday" | "booking" | "event";
 
 interface ScheduleItem {
   id: string;
-  date: string; // 'YYYY-MM-DD'
+  date: string;
   title: string;
   type: ScheduleType;
   reserve?: Reserve;
   calendar?: Calendar;
 }
 
-// default_time (ISO datetime) → "08:00"
 const fmtTime = (t?: string) => {
   if (!t) return "";
   const d = new Date(t);
@@ -37,8 +36,9 @@ export default function SchedulePage() {
   const { employees, loadEmployees } = useEmployeeStore();
   const { reserves, loadReserves } = useReserveStore();
   const { calendars, loadCalendars } = useCalendarStore();
+  const { lang, t } = useLang();
 
-  const [viewMonth, setViewMonth] = useState(4); // May
+  const [viewMonth, setViewMonth] = useState(4);
   const [viewYear, setViewYear] = useState(2026);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -46,10 +46,9 @@ export default function SchedulePage() {
 
   useEffect(() => {
     loadEmployees();
-    loadCalendars(); // วันหยุด (master data — ควรมี guard ใน store)
+    loadCalendars();
   }, [loadEmployees, loadCalendars]);
 
-  // โหลดการจองของเดือนที่ดูอยู่ (เฉพาะของ emp ตัวเอง)
   useEffect(() => {
     if (!currentEmployee?.id) return;
     const mm = String(viewMonth + 1).padStart(2, "0");
@@ -61,20 +60,7 @@ export default function SchedulePage() {
     });
   }, [currentEmployee?.id, viewMonth, viewYear, loadReserves]);
 
-  const monthNames = [
-    "มกราคม",
-    "กุมภาพันธ์",
-    "มีนาคม",
-    "เมษายน",
-    "พฤษภาคม",
-    "มิถุนายน",
-    "กรกฎาคม",
-    "สิงหาคม",
-    "กันยายน",
-    "ตุลาคม",
-    "พฤศจิกายน",
-    "ธันวาคม",
-  ];
+  const monthNames = t("schedule", "months").split(",");
   const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
   const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
@@ -97,7 +83,6 @@ export default function SchedulePage() {
   const toKey = (y: number, m: number, d: number) =>
     `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
-  // ── รวม วันหยุด + การจอง เป็น schedule items ──
   const scheduleMap = useMemo(() => {
     const map = new Map<string, ScheduleItem[]>();
     const push = (key: string, item: ScheduleItem) => {
@@ -106,26 +91,33 @@ export default function SchedulePage() {
       map.set(key, list);
     };
 
-    // 1) วันหยุด (holiday) จาก calendars
+    // วันหยุด
     calendars.forEach((c) => {
       const dateKey = (c.date_at ?? "").slice(0, 10);
       if (!dateKey) return;
+      const name =
+        lang === "th"
+          ? (c as any).name_th || (c as any).name || (c as any).title
+          : (c as any).name_en || (c as any).name || (c as any).title;
       push(dateKey, {
         id: `cal-${c.id}`,
         date: dateKey,
-        title: (c as any).name || (c as any).title || "วันหยุด",
+        title: name || t("schedule", "holiday"),
         type: "holiday",
         calendar: c,
       });
     });
 
-    // 2) การจอง (booking) จาก reserves — ข้ามที่ยกเลิก
+    // การจอง
     reserves.forEach((r) => {
       if (r.is_state === "canceled") return;
       const dateKey = (r.travel_date ?? "").slice(0, 10);
       if (!dateKey) return;
 
-      const dir = r.shift?.trip_direction === "inbound" ? "รับเข้า" : "รับออก";
+      const dir =
+        r.shift?.trip_direction === "inbound"
+          ? t("schedule", "dirIn")
+          : t("schedule", "dirOut");
       const time = fmtTime(r.shift?.default_time);
       const routeCode = r.route?.code ? ` · ${r.route.code}` : "";
 
@@ -139,7 +131,7 @@ export default function SchedulePage() {
     });
 
     return map;
-  }, [calendars, reserves]);
+  }, [calendars, reserves, lang, t]);
 
   const selected = useMemo(() => {
     for (const list of scheduleMap.values()) {
@@ -149,7 +141,6 @@ export default function SchedulePage() {
     return null;
   }, [scheduleMap, selectedId]);
 
-  /* grid 6×7 */
   const totalCells = 42;
   const cells = Array.from({ length: totalCells }).map((_, idx) => {
     const dayNum = idx - firstDayOfMonth + 1;
@@ -164,10 +155,12 @@ export default function SchedulePage() {
     };
   });
 
+  // ปี: th=พ.ศ. / en=ค.ศ.
+  const displayYear = lang === "th" ? viewYear + 543 : viewYear;
+
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
       {/* Header */}
-
       <div
         className="relative rounded-b-[40px] px-7 pt-12 pb-6 overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: "url('/images/bg.jpg')" }}
@@ -175,17 +168,12 @@ export default function SchedulePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/70 via-blue-700/70 to-blue-500/100" />
 
         <div className="relative z-10">
-          {/* Title + Menu */}
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white drop-shadow-md">
-                ปฏิทินการทำงาน
+              <h1 className="text-xl mb-4 font-bold text-white drop-shadow-md">
+                {t("schedule", "title")}
               </h1>
-              <p className="mt-1 mb-4 text-xs text-white/90 drop-shadow">
-                ตารางการเดินทางและวันหยุดของคุณ
-              </p>
             </div>
-
             <button
               type="button"
               onClick={openMenu}
@@ -206,7 +194,7 @@ export default function SchedulePage() {
               <ChevronLeft size={18} />
             </button>
             <h2 className="min-w-[180px] text-center text-lg font-bold text-white drop-shadow">
-              {monthNames[viewMonth]} {viewYear + 543}
+              {monthNames[viewMonth]} {displayYear}
             </h2>
             <button
               type="button"
@@ -221,8 +209,8 @@ export default function SchedulePage() {
 
       {/* Legend */}
       <div className="mt-2 mx-5 flex items-center justify-center gap-4 rounded-2xl bg-white p-3 shadow-sm">
-        <LegendDot color="bg-red-200" label="วันหยุด" />
-        <LegendDot color="bg-blue-200" label="การจอง" />
+        <LegendDot color="bg-red-200" label={t("schedule", "holiday")} />
+        <LegendDot color="bg-blue-200" label={t("schedule", "booking")} />
       </div>
 
       {/* Calendar Grid */}
@@ -289,7 +277,7 @@ export default function SchedulePage() {
                       onClick={() => setSelectedId(items[2].id)}
                       className="w-full text-left text-[9px] font-semibold text-slate-500 hover:underline"
                     >
-                      +{items.length - 2} เพิ่มเติม
+                      +{items.length - 2} {t("schedule", "more")}
                     </button>
                   )}
                 </div>

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 import CalendarDialog from "@/components/modals/CalendarDialog";
-import { mockHistory, toExistingBookings } from "@/lib/mockData";
+
 import { useRouter } from "next/navigation";
 import EditRouteDialog, {
   type EditRouteData,
@@ -27,12 +27,10 @@ import type {
   Language,
   Shift,
 } from "@/types";
+import { useLang } from "@/lib/lang-context";
 
 type BookingType = "normal" | "ot";
 type RouteType = "round" | "oneway";
-
-type UILang = "TH" | "EN";
-const toApiLang = (l: UILang): Language => (l === "TH" ? "th" : "en");
 
 // bookingType (UI) -> shift.type (DB)
 const bookingTypeToShiftType = (b: BookingType) =>
@@ -65,13 +63,13 @@ export default function ReservePage() {
   const openMenu = useUIStore((s) => s.openMenu);
   const router = useRouter();
 
+  const { lang, t } = useLang();
   const { profile } = useAuthStore();
   const { employees, updateEmployee, loadEmployees } = useEmployeeStore();
   const { routes, points, loadRoutesPoints } = useRoutePointStore();
   const { shifts, loadShifts } = useShiftStore();
-  const { bulkAddReserves } = useReserveStore();
+  const { bulkAddReserves, loadReserves, reserves } = useReserveStore();
 
-  const [lang] = useState<UILang>("TH");
   const [bookingType, setBookingType] = useState<BookingType>("normal");
   const [routeType, setRouteType] = useState<RouteType>("round");
 
@@ -135,6 +133,13 @@ export default function ReservePage() {
     (employee) => employee.code === profile?.code,
   );
 
+  // โหลดการจองของตัวเอง (สำหรับเช็ควันซ้ำในปฏิทิน)
+  useEffect(() => {
+    if (currentEmployee?.id) {
+      loadReserves({ employee_id: currentEmployee.id });
+    }
+  }, [currentEmployee?.id, loadReserves]);
+
   const transportDefaults: EmployeeTransportDefault[] =
     currentEmployee?.transport_defaults ?? [];
 
@@ -147,7 +152,24 @@ export default function ReservePage() {
   const onewayDirection = onewaySelected?.trip_direction;
 
   const formatDate = (d: Date) => {
-    const months = [
+    if (lang === "en") {
+      const monthsEn = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return `${d.getDate()} ${monthsEn[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    const monthsTh = [
       "ม.ค.",
       "ก.พ.",
       "มี.ค.",
@@ -161,33 +183,39 @@ export default function ReservePage() {
       "พ.ย.",
       "ธ.ค.",
     ];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+    return `${d.getDate()} ${monthsTh[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
   const dayOfWeek = (d: Date) => {
-    const days = [
-      "วันอาทิตย์",
-      "วันจันทร์",
-      "วันอังคาร",
-      "วันพุธ",
-      "วันพฤหัสฯ",
-      "วันศุกร์",
-      "วันเสาร์",
-    ];
+    const days = t("reserve", "days").split(",");
     return days[d.getDay()];
   };
 
   const nameOf = (
     item?: { name_th: string; name_en: string } | null,
-    fallback = "ยังไม่ได้กำหนด",
+    fallback = t("reserve", "notSet"),
   ) => {
     if (!item) return fallback;
-    return lang === "TH"
+    return lang === "th"
       ? item.name_th || item.name_en || fallback
       : item.name_en || item.name_th || fallback;
   };
+  // แปลงการจองจริงเป็น existingBookings สำหรับปฏิทิน
+  const existingBookings = useMemo(() => {
+    return reserves.map((r) => {
+      const dateKey = (r.travel_date ?? "").slice(0, 10);
+      return {
+        id: r.id,
+        startDate: dateKey,
+        endDate: dateKey,
 
-  const existingBookings = useMemo(() => toExistingBookings(mockHistory), []);
+        status:
+          r.is_state === "canceled"
+            ? ("cancelled" as const)
+            : ("booked" as const),
+      };
+    });
+  }, [reserves]);
 
   const handleSave = async () => {
     if (!currentEmployee?.id) {
@@ -277,7 +305,7 @@ export default function ReservePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/60 via-blue-700/70 to-blue-500/90" />
         <div className="relative flex items-center justify-between">
           <h1 className="text-xl font-bold text-white drop-shadow-md">
-            การจองรถ
+            {t("reserve", "title")}
           </h1>
           <button
             type="button"
@@ -296,18 +324,18 @@ export default function ReservePage() {
           {/* ประเภทการจอง */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
-              เลือกประเภทการจอง
+              {t("reserve", "bookingType")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <SelectCard
                 selected={bookingType === "normal"}
                 onClick={() => setBookingType("normal")}
-                label="รอบปกติ"
+                label={t("reserve", "typeNormal")}
               />
               <SelectCard
                 selected={bookingType === "ot"}
                 onClick={() => setBookingType("ot")}
-                label="รอบ OT"
+                label={t("reserve", "typeOt")}
               />
             </div>
           </section>
@@ -315,17 +343,17 @@ export default function ReservePage() {
           {/* วันที่ */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
-              เลือกวันที่เดินทาง
+              {t("reserve", "selectDate")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <DateCard
-                label="วันที่เริ่มต้น"
+                label={t("reserve", "startDate")}
                 date={formatDate(startDate)}
                 day={dayOfWeek(startDate)}
                 onClick={() => setCalendarOpen("start")}
               />
               <DateCard
-                label="วันที่สิ้นสุด"
+                label={t("reserve", "endDate")}
                 date={formatDate(endDate)}
                 day={dayOfWeek(endDate)}
                 onClick={() => setCalendarOpen("end")}
@@ -336,18 +364,18 @@ export default function ReservePage() {
           {/* รูปแบบเส้นทาง */}
           <section>
             <h2 className="mb-3 text-sm font-bold text-slate-800">
-              เลือกเส้นทาง
+              {t("reserve", "selectRoute")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <SelectCard
                 selected={routeType === "round"}
                 onClick={() => setRouteType("round")}
-                label="จองรถไป-กลับ"
+                label={t("reserve", "roundTrip")}
               />
               <SelectCard
                 selected={routeType === "oneway"}
                 onClick={() => setRouteType("oneway")}
-                label="จองรถขาเดียว"
+                label={t("reserve", "oneWay")}
               />
             </div>
           </section>
@@ -357,8 +385,10 @@ export default function ReservePage() {
             <>
               <section>
                 <h2 className="mb-3 text-sm font-bold text-slate-800">
-                  เลือกรอบขาเข้า{" "}
-                  <span className="text-orange-500">รับเข้า</span>
+                  {t("reserve", "selectInbound")}{" "}
+                  <span className="text-orange-500">
+                    {t("reserve", "dirIn")}
+                  </span>
                 </h2>
                 <div className="grid grid-cols-3 gap-3">
                   {inboundShifts.map((s) => (
@@ -370,13 +400,18 @@ export default function ReservePage() {
                       topText="รับเข้า"
                     />
                   ))}
-                  {inboundShifts.length === 0 && <EmptyShift />}
+                  {inboundShifts.length === 0 && (
+                    <EmptyShift label={t("reserve", "noShift")} />
+                  )}
                 </div>
               </section>
 
               <section>
                 <h2 className="mb-3 text-sm font-bold text-slate-800">
-                  เลือกรอบขาออก <span className="text-orange-500">รับออก</span>
+                  {t("reserve", "selectOutbound")}{" "}
+                  <span className="text-orange-500">
+                    {t("reserve", "dirOut")}
+                  </span>
                 </h2>
                 <div className="grid grid-cols-3 gap-3">
                   {outboundShifts.map((s) => (
@@ -385,10 +420,12 @@ export default function ReservePage() {
                       selected={outboundShiftId === s.id}
                       onClick={() => setOutboundShiftId(s.id)}
                       time={shiftTimeText(s)}
-                      topText="รับออก"
+                      topText={t("reserve", "dirOut")}
                     />
                   ))}
-                  {outboundShifts.length === 0 && <EmptyShift />}
+                  {outboundShifts.length === 0 && (
+                    <EmptyShift label={t("reserve", "noShift")} />
+                  )}
                 </div>
               </section>
             </>
@@ -402,11 +439,15 @@ export default function ReservePage() {
                     onClick={() => setOnewayShiftId(s.id)}
                     time={shiftTimeText(s)}
                     topText={
-                      s.trip_direction === "inbound" ? "รับเข้า" : "รับออก"
+                      s.trip_direction === "inbound"
+                        ? t("reserve", "dirIn")
+                        : t("reserve", "dirOut")
                     }
                   />
                 ))}
-                {shiftsByType.length === 0 && <EmptyShift />}
+                {shiftsByType.length === 0 && (
+                  <EmptyShift label={t("reserve", "noShift")} />
+                )}
               </div>
             </section>
           )}
@@ -416,8 +457,8 @@ export default function ReservePage() {
         {showInbound && (
           <div className="rounded-2xl bg-white p-5 shadow-sm space-y-4">
             <RouteField
-              title="สายรถ"
-              subTitle="รับเข้า"
+              title={t("reserve", "routeLabel")}
+              subTitle={t("reserve", "dirIn")}
               subColor="text-orange-500"
               code={inbound?.route?.code}
               codeColor="bg-blue-500"
@@ -425,8 +466,8 @@ export default function ReservePage() {
               onEdit={() => setEditOpen(true)}
             />
             <RouteField
-              title="จุดรับส่ง"
-              subTitle="รับเข้า"
+              title={t("reserve", "pointLabel")}
+              subTitle={t("reserve", "dirIn")}
               subColor="text-orange-500"
               code={inbound?.point?.code}
               codeColor="bg-blue-500"
@@ -440,8 +481,8 @@ export default function ReservePage() {
         {showOutbound && (
           <div className="rounded-2xl bg-white p-5 shadow-sm space-y-4">
             <RouteField
-              title="สายรถ"
-              subTitle="รับออก"
+              title={t("reserve", "routeLabel")}
+              subTitle={t("reserve", "dirOut")}
               subColor="text-orange-500"
               code={outbound?.route?.code}
               codeColor="bg-orange-400"
@@ -449,8 +490,8 @@ export default function ReservePage() {
               onEdit={() => setEditOpen(true)}
             />
             <RouteField
-              title="จุดรับส่ง"
-              subTitle="รับออก"
+              title={t("reserve", "pointLabel")}
+              subTitle={t("reserve", "dirOut")}
               subColor="text-orange-500"
               code={outbound?.point?.code}
               codeColor="bg-orange-400"
@@ -464,14 +505,14 @@ export default function ReservePage() {
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800">
-              หมายเหตุ (ถ้ามี)
+              {t("reserve", "noteLabel")}
             </h2>
           </div>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            placeholder="โปรดระบุรายละเอียดเพิ่มเติม"
+            placeholder={t("reserve", "notePlaceholder")}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -484,7 +525,7 @@ export default function ReservePage() {
             onClick={handleSave}
             disabled={bookingSubmitting}
           >
-            {bookingSubmitting ? "กำลังบันทึก..." : "บันทึก"}
+            {bookingSubmitting ? t("reserve", "saving") : t("reserve", "save")}
           </button>
           <button
             type="button"
@@ -492,7 +533,7 @@ export default function ReservePage() {
             disabled={bookingSubmitting}
             className="w-full rounded-2xl bg-orange-500 py-3.5 font-bold text-white shadow-md transition hover:bg-orange-600 active:scale-[0.98] disabled:opacity-60"
           >
-            ยกเลิก
+            {t("reserve", "cancel")}
           </button>
         </div>
       </div>
@@ -517,7 +558,7 @@ export default function ReservePage() {
         <EditRouteDialog
           user={{
             name:
-              lang === "TH"
+              lang === "th"
                 ? `${currentEmployee.first_name_th ?? ""} ${
                     currentEmployee.last_name_th ?? ""
                   }`.trim()
@@ -528,7 +569,7 @@ export default function ReservePage() {
           }}
           routes={routes}
           points={points}
-          lang={toApiLang(lang)}
+          lang={lang as Language}
           initialData={{
             tripIn: {
               routeId: inbound?.route_id ?? "",
@@ -639,10 +680,10 @@ function ShiftCard({
   );
 }
 
-function EmptyShift() {
+function EmptyShift({ label }: { label: string }) {
   return (
     <p className="col-span-3 py-4 text-center text-xs text-slate-400">
-      ยังไม่มีรอบเดินทาง
+      {label}
     </p>
   );
 }

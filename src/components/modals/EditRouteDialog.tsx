@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bus, MapPin, Check } from "lucide-react";
 import { useUIStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
 import { CustomSelect } from "./CustomSelect";
 import type { Route, Point, Language } from "@/types";
 
@@ -35,6 +36,7 @@ export default function EditRouteDialog({
   saving = false,
 }: Props) {
   const { openDialog, closeDialog } = useUIStore();
+  const { t } = useLang();
 
   const [tripIn, setTripIn] = useState(initialData.tripIn);
   const [tripOut, setTripOut] = useState(initialData.tripOut);
@@ -48,7 +50,6 @@ export default function EditRouteDialog({
     };
   }, [openDialog, closeDialog]);
 
-  // แยกสายตามทิศทาง
   const inboundRoutes = routes.filter((r) => r.trip_direction === "inbound");
   const outboundRoutes = routes.filter((r) => r.trip_direction === "outbound");
 
@@ -68,7 +69,7 @@ export default function EditRouteDialog({
             <div>
               <p className="text-lg font-bold text-slate-800">{user.name}</p>
               <p className="text-sm text-slate-500">
-                รหัสพนักงาน: {user.empCode}
+                {t("editRoute", "empCode")}: {user.empCode}
               </p>
             </div>
           </div>
@@ -77,7 +78,7 @@ export default function EditRouteDialog({
 
           {/* Trip In */}
           <TripSection
-            title="Trip In (ขาเข้า)"
+            title={t("editRoute", "tripIn")}
             titleColor="text-blue-500"
             iconColor="text-blue-500"
             selectedColor="blue"
@@ -94,7 +95,7 @@ export default function EditRouteDialog({
 
           {/* Trip Out */}
           <TripSection
-            title="Trip Out (ขาออก)"
+            title={t("editRoute", "tripOut")}
             titleColor="text-orange-500"
             iconColor="text-orange-500"
             selectedColor="orange"
@@ -116,7 +117,7 @@ export default function EditRouteDialog({
             disabled={saving}
             className="min-w-[110px] rounded-2xl bg-red-500 py-3 font-bold text-white shadow-md transition hover:bg-red-600 active:scale-[0.98] disabled:opacity-50"
           >
-            ยกเลิก
+            {t("editRoute", "cancel")}
           </button>
           <button
             type="button"
@@ -124,7 +125,7 @@ export default function EditRouteDialog({
             disabled={saving}
             className="min-w-[110px] rounded-2xl bg-blue-600 py-3 font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
           >
-            {saving ? "กำลังบันทึก..." : "บันทึก"}
+            {saving ? t("editRoute", "saving") : t("editRoute", "save")}
           </button>
         </div>
       </div>
@@ -158,7 +159,8 @@ function TripSection({
   onSelectRoute: (id: string) => void;
   onSelectPoint: (id: string) => void;
 }) {
-  // filter จุดตามสายที่เลือก
+  const { t } = useLang();
+
   const filteredPoints = points.filter((p) => p.route_id === selectedRouteId);
   const pointNames = filteredPoints.map((p) =>
     lang === "th" ? p.name_th : p.name_en,
@@ -177,7 +179,9 @@ function TripSection({
       {/* สายรถ */}
       <div className={`mb-2 flex items-center gap-2 ${iconColor}`}>
         <Bus size={18} />
-        <span className="text-sm font-semibold text-slate-700">สายรถ</span>
+        <span className="text-sm font-semibold text-slate-700">
+          {t("editRoute", "route")}
+        </span>
       </div>
 
       <div
@@ -185,7 +189,9 @@ function TripSection({
         style={{ scrollbarWidth: "thin" }}
       >
         {routes.length === 0 && (
-          <p className="py-4 text-center text-sm text-slate-400">ไม่มีสายรถ</p>
+          <p className="py-4 text-center text-sm text-slate-400">
+            {t("editRoute", "noRoute")}
+          </p>
         )}
         {routes.map((r) => (
           <RouteRadio
@@ -202,14 +208,20 @@ function TripSection({
       {/* จุดรับส่ง */}
       <div className={`mb-2 mt-4 flex items-center gap-2 ${iconColor}`}>
         <MapPin size={18} />
-        <span className="text-sm font-semibold text-slate-700">จุดรับส่ง</span>
+        <span className="text-sm font-semibold text-slate-700">
+          {t("editRoute", "pickupPoint")}
+        </span>
       </div>
 
       <CustomSelect
         value={selectedPointName}
         options={pointNames}
         disabled={!selectedRouteId}
-        placeholder={selectedRouteId ? "เลือกจุดรับส่ง" : "กรุณาเลือกสายรถก่อน"}
+        placeholder={
+          selectedRouteId
+            ? t("editRoute", "selectPoint")
+            : t("editRoute", "selectRouteFirst")
+        }
         onChange={(name) => {
           const point = filteredPoints.find(
             (p) => (lang === "th" ? p.name_th : p.name_en) === name,

@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useLang } from "@/lib/lang-context";
 
 interface CustomSelectProps {
   value: string;
@@ -15,10 +16,14 @@ export function CustomSelect({
   value,
   options,
   onChange,
-  placeholder = "เลือกข้อมูล",
+  placeholder,
   disabled = false,
 }: CustomSelectProps) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
+
+  // ถ้าไม่ส่ง placeholder มา ใช้ค่าแปลตามภาษา
+  const ph = placeholder ?? t("customSelect", "placeholder");
 
   const handleToggle = () => {
     if (disabled) return;
@@ -42,7 +47,7 @@ export function CustomSelect({
             value ? "text-slate-700" : "text-slate-400"
           }`}
         >
-          {value || placeholder}
+          {value || ph}
         </span>
 
         <ChevronDown
@@ -57,7 +62,7 @@ export function CustomSelect({
         <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
           {options.length === 0 ? (
             <div className="px-4 py-3 text-sm text-slate-400">
-              ไม่มีตัวเลือก
+              {t("customSelect", "noOptions")}
             </div>
           ) : (
             options.map((opt) => (

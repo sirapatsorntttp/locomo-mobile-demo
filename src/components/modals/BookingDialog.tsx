@@ -5,15 +5,16 @@ import { Bus, Calendar, Navigation, Clock, Car, MapPin } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 import { useReserveStore } from "@/lib/stores/reserve.store";
 import { useShiftStore } from "@/lib/stores/shift.store";
+import { useLang } from "@/lib/lang-context";
 import { CustomSelect } from "./CustomSelect";
 import type { Reserve } from "@/types";
+import type { Lang } from "@/lib/i18n";
 
 interface Props {
   booking: Reserve;
   onClose: () => void;
 }
 
-/* default_time เป็น ISO datetime (1970-01-01T08:00:00) → "08:00" */
 const fmtTime = (t?: string) => {
   if (!t) return "-";
   const d = new Date(t);
@@ -23,7 +24,6 @@ const fmtTime = (t?: string) => {
   return t.slice(0, 5);
 };
 
-/* Date → "YYYY-MM-DD" (local) สำหรับ input type=date */
 const toInputDate = (iso?: string) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -33,17 +33,55 @@ const toInputDate = (iso?: string) => {
   return `${y}-${m}-${day}`;
 };
 
+// bilingual date
+const formatDisplayDate = (lang: Lang, iso?: string) => {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (lang === "en") {
+    const m = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  const m = [
+    "ม.ค.",
+    "ก.พ.",
+    "มี.ค.",
+    "เม.ย.",
+    "พ.ค.",
+    "มิ.ย.",
+    "ก.ค.",
+    "ส.ค.",
+    "ก.ย.",
+    "ต.ค.",
+    "พ.ย.",
+    "ธ.ค.",
+  ];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear() + 543}`;
+};
+
 export default function BookingDialog({ booking, onClose }: Props) {
   const { openDialog, closeDialog } = useUIStore();
   const { deleteReserve, addReserve } = useReserveStore();
   const { shifts, loadShifts } = useShiftStore();
+  const { lang, t } = useLang();
 
   const isPending = booking.is_state === "waiting";
   const isApproved =
     booking.is_state === "approved" || booking.is_state === "finished";
   const editable = isPending;
 
-  // ── edit state ──
   const [editDate, setEditDate] = useState(toInputDate(booking.travel_date));
   const [editDir, setEditDir] = useState<"inbound" | "outbound">(
     (booking.shift?.trip_direction as "inbound" | "outbound") ?? "inbound",
@@ -64,13 +102,12 @@ export default function BookingDialog({ booking, onClose }: Props) {
     if (editable) loadShifts();
   }, [editable, loadShifts]);
 
-  // ── options ──
+  // dir options (แปลตามภาษา)
   const dirOptions = [
-    { value: "inbound", label: "รอบรับเข้า" },
-    { value: "outbound", label: "รอบรับออก" },
+    { value: "inbound" as const, label: t("bookingDialog", "roundIn") },
+    { value: "outbound" as const, label: t("bookingDialog", "roundOut") },
   ];
 
-  // เวลาของทิศทางที่เลือก
   const timeShifts = useMemo(
     () => shifts.filter((s) => s.trip_direction === editDir),
     [shifts, editDir],
@@ -81,61 +118,40 @@ export default function BookingDialog({ booking, onClose }: Props) {
   );
   const timeLabelToId = new Map(timeOptions.map((o) => [o.label, o.id]));
 
-  // เปลี่ยนทิศทาง → รีเซ็ตเวลาเป็นตัวแรกของทิศทางนั้น
   const handleChangeDir = (label: string) => {
-    const dir = dirOptions.find((o) => o.label === label)?.value as
-      | "inbound"
-      | "outbound";
+    const dir = dirOptions.find((o) => o.label === label)?.value ?? "inbound";
     setEditDir(dir);
     const first = shifts.find((s) => s.trip_direction === dir);
     if (first) setEditShiftId(first.id);
   };
 
-  // ── ค่าที่ใช้แสดง ──
   const selShift = editable
     ? (shifts.find((s) => s.id === editShiftId) ?? booking.shift)
     : booking.shift;
 
-  const formatThaiDate = (iso?: string) => {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    const months = [
-      "ม.ค.",
-      "ก.พ.",
-      "มี.ค.",
-      "เม.ย.",
-      "พ.ค.",
-      "มิ.ย.",
-      "ก.ค.",
-      "ส.ค.",
-      "ก.ย.",
-      "ต.ค.",
-      "พ.ย.",
-      "ธ.ค.",
-    ];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
-  };
-
   const roundText =
     selShift?.trip_direction === "inbound"
-      ? "รอบรับเข้า"
+      ? t("bookingDialog", "roundIn")
       : selShift?.trip_direction === "outbound"
-        ? "รอบรับออก"
+        ? t("bookingDialog", "roundOut")
         : "-";
 
   const routeText = booking.route
-    ? `${booking.route.code ?? ""} ${booking.route.name_th || booking.route.name_en || ""}`.trim()
-    : "ยังไม่ได้กำหนดเส้นทาง";
+    ? `${booking.route.code ?? ""} ${(lang === "th" ? booking.route.name_th : booking.route.name_en) || booking.route.name_th || booking.route.name_en || ""}`.trim()
+    : t("bookingDialog", "noRoute");
   const pickupText =
-    booking.point?.name_th ||
-    booking.point?.name_en ||
-    "ยังไม่ได้กำหนดจุดรับส่ง";
+    (lang === "th"
+      ? booking.point?.name_th || booking.point?.name_en
+      : booking.point?.name_en || booking.point?.name_th) ||
+    t("bookingDialog", "noPoint");
 
   const empName =
-    `${booking.employee?.first_name_th ?? ""} ${booking.employee?.last_name_th ?? ""}`.trim() ||
+    (lang === "th"
+      ? `${booking.employee?.first_name_th ?? ""} ${booking.employee?.last_name_th ?? ""}`.trim()
+      : `${booking.employee?.first_name_en ?? ""} ${booking.employee?.last_name_en ?? ""}`.trim()) ||
     "-";
   const empCode = booking.employee?.code ?? "-";
-  const createdText = formatThaiDate(booking.created_at);
+  const createdText = formatDisplayDate(lang, booking.created_at);
 
   const iconBgColor = isPending
     ? "bg-amber-500"
@@ -143,15 +159,17 @@ export default function BookingDialog({ booking, onClose }: Props) {
       ? "bg-green-500"
       : "bg-red-500";
   const statusText = isPending
-    ? { label: "รออนุมัติ", color: "text-amber-500" }
+    ? { label: t("bookingDialog", "statusPending"), color: "text-amber-500" }
     : isApproved
       ? {
-          label: booking.is_state === "finished" ? "เสร็จสิ้น" : "อนุมัติแล้ว",
+          label:
+            booking.is_state === "finished"
+              ? t("bookingDialog", "statusFinished")
+              : t("bookingDialog", "statusApproved"),
           color: "text-green-600",
         }
-      : { label: "ยกเลิก", color: "text-red-500" };
+      : { label: t("bookingDialog", "statusCancelled"), color: "text-red-500" };
 
-  // ── actions ──
   const handleCancelBooking = async () => {
     await deleteReserve(booking.id);
     onClose();
@@ -160,11 +178,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
   const handleSave = async () => {
     try {
       setSaving(true);
-
-      // 1) ยกเลิกอันเก่า → is_state = 'canceled'
       await deleteReserve(booking.id);
-
-      // 2) สร้างอันใหม่ → is_state = 'waiting' (รออนุมัติ)
       await addReserve({
         employee_id: booking.employee_id,
         shift_id: editShiftId,
@@ -172,12 +186,12 @@ export default function BookingDialog({ booking, onClose }: Props) {
         travel_date: editDate,
         remark: booking.remark ?? undefined,
       });
-
       onClose();
     } finally {
       setSaving(false);
     }
   };
+
   return (
     <div
       className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
@@ -190,7 +204,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
         {/* Header */}
         <div className="relative p-5 border-b border-slate-100">
           <p className="absolute top-4 right-5 text-[11px] text-slate-400">
-            จองเมื่อ {createdText}
+            {t("bookingDialog", "bookedAt")} {createdText}
           </p>
           <div className="flex items-center gap-3 mt-2">
             <div
@@ -200,9 +214,11 @@ export default function BookingDialog({ booking, onClose }: Props) {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-800">{empName}</h3>
-              <p className="text-xs text-slate-500">รหัสพนักงาน: {empCode}</p>
               <p className="text-xs text-slate-500">
-                สถานะ:{" "}
+                {t("bookingDialog", "empCode")}: {empCode}
+              </p>
+              <p className="text-xs text-slate-500">
+                {t("bookingDialog", "status")}:{" "}
                 <span className={`font-semibold ${statusText.color}`}>
                   {statusText.label}
                 </span>
@@ -213,13 +229,15 @@ export default function BookingDialog({ booking, onClose }: Props) {
 
         {/* รายละเอียด */}
         <div className="p-5">
-          <h4 className="text-sm font-bold text-blue-600 mb-4">รายละเอียด</h4>
+          <h4 className="text-sm font-bold text-blue-600 mb-4">
+            {t("bookingDialog", "detail")}
+          </h4>
 
           <div className="space-y-3">
             {/* วันที่เดินทาง */}
             <FieldRow
               icon={<Calendar size={18} className="text-blue-500" />}
-              label="วันที่เดินทาง"
+              label={t("bookingDialog", "travelDate")}
             >
               {editable ? (
                 <input
@@ -229,14 +247,16 @@ export default function BookingDialog({ booking, onClose }: Props) {
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none"
                 />
               ) : (
-                <TextDisplay value={formatThaiDate(booking.travel_date)} />
+                <TextDisplay
+                  value={formatDisplayDate(lang, booking.travel_date)}
+                />
               )}
             </FieldRow>
 
-            {/* รอบ (ทิศทาง) */}
+            {/* รอบ */}
             <FieldRow
               icon={<Navigation size={18} className="text-blue-500" />}
-              label="รอบ"
+              label={t("bookingDialog", "round")}
             >
               {editable ? (
                 <CustomSelect
@@ -254,7 +274,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
             {/* เวลารับ */}
             <FieldRow
               icon={<Clock size={18} className="text-blue-500" />}
-              label="เวลารับ"
+              label={t("bookingDialog", "pickupTime")}
             >
               {editable ? (
                 <CustomSelect
@@ -271,18 +291,18 @@ export default function BookingDialog({ booking, onClose }: Props) {
               )}
             </FieldRow>
 
-            {/* สายรถ — read-only (default emp) */}
+            {/* สายรถ */}
             <FieldRow
               icon={<Car size={18} className="text-blue-500" />}
-              label="สายรถ"
+              label={t("bookingDialog", "route")}
             >
               <TextDisplay value={routeText} />
             </FieldRow>
 
-            {/* จุดรับส่ง — read-only (default emp) */}
+            {/* จุดรับส่ง */}
             <FieldRow
               icon={<MapPin size={18} className="text-blue-500" />}
-              label="จุดรับส่ง"
+              label={t("bookingDialog", "pickupPoint")}
             >
               <TextDisplay value={pickupText} />
             </FieldRow>
@@ -290,7 +310,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
             {booking.remark && (
               <FieldRow
                 icon={<MapPin size={18} className="text-blue-500" />}
-                label="หมายเหตุ"
+                label={t("bookingDialog", "note")}
               >
                 <TextDisplay value={booking.remark} />
               </FieldRow>
@@ -306,29 +326,24 @@ export default function BookingDialog({ booking, onClose }: Props) {
                   disabled={saving}
                   className="bg-red-500 hover:bg-red-600 text-white rounded-2xl py-3 font-bold text-base transition-colors shadow-md disabled:opacity-60"
                 >
-                  ยกเลิกการจอง
+                  {t("bookingDialog", "cancelBooking")}
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
                   className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-3 font-bold text-base transition-colors shadow-md disabled:opacity-60"
                 >
-                  {saving ? "กำลังบันทึก..." : "บันทึก"}
+                  {saving
+                    ? t("bookingDialog", "saving")
+                    : t("bookingDialog", "save")}
                 </button>
               </div>
-            ) : isApproved ? (
-              <button
-                onClick={onClose}
-                className="w-full bg-slate-500 hover:bg-slate-600 text-white rounded-2xl py-3 font-bold text-base transition-colors shadow-md"
-              >
-                ปิด
-              </button>
             ) : (
               <button
                 onClick={onClose}
                 className="w-full bg-slate-500 hover:bg-slate-600 text-white rounded-2xl py-3 font-bold text-base transition-colors shadow-md"
               >
-                ปิด
+                {t("bookingDialog", "close")}
               </button>
             )}
           </div>

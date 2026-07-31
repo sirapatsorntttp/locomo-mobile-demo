@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useUIStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
 
 /* ─── Types ─── */
 export interface ExistingBooking {
   id: string;
-  startDate: string; // 'YYYY-MM-DD'
+  startDate: string;
   endDate: string;
   status: "booked" | "cancelled";
 }
@@ -45,6 +46,7 @@ export default function CalendarDialog({
   onConfirm,
 }: Props) {
   const { openDialog, closeDialog } = useUIStore();
+  const { lang, t } = useLang();
 
   const [viewMonth, setViewMonth] = useState(startDate.getMonth());
   const [viewYear, setViewYear] = useState(startDate.getFullYear());
@@ -61,39 +63,22 @@ export default function CalendarDialog({
     };
   }, [openDialog, closeDialog]);
 
-  /* ─── สร้าง map ของวันที่ถูกจอง / ยกเลิก ─── */
   const bookingMap = useMemo(() => {
     const map = new Map<string, ExistingBooking>();
-
     existingBookings.forEach((b) => {
       const start = parseKey(b.startDate);
       const end = parseKey(b.endDate);
-
       const cur = new Date(start);
       while (cur <= end) {
         map.set(toKey(cur), b);
         cur.setDate(cur.getDate() + 1);
       }
     });
-
     return map;
   }, [existingBookings]);
 
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = t("calendarDialog", "months").split(",");
+  const dayNames = t("calendarDialog", "dayNames").split(",");
 
   const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -111,7 +96,6 @@ export default function CalendarDialog({
     } else setViewMonth(viewMonth + 1);
   };
 
-  /* ─── ตรวจว่ามีวันที่ถูกจอง (booked) อยู่ในช่วงหรือไม่ ─── */
   const hasBookedInRange = (start: Date, end: Date) => {
     const cur = new Date(start);
     while (cur <= end) {
@@ -125,30 +109,24 @@ export default function CalendarDialog({
   const handleClickDate = (day: number) => {
     const d = new Date(viewYear, viewMonth, day);
     const existing = bookingMap.get(toKey(d));
-
-    // ถ้ามีการจองอยู่แล้ว → กดไม่ได้
     if (existing?.status === "booked") return;
 
     if (!selecting) {
-      // คลิกแรก → เลือกวันเดียว (start = end) ใช้ได้ทันที
       setTempStart(d);
       setTempEnd(d);
       setSelecting(true);
     } else {
-      // คลิกที่สอง → ขยายเป็นช่วง
       if (!tempStart) {
         setTempStart(d);
         setTempEnd(d);
       } else if (d < tempStart) {
-        // คลิกก่อนวันเริ่ม → สลับเป็นวันเริ่มใหม่
         if (hasBookedInRange(d, tempStart)) return;
         setTempStart(d);
       } else {
-        // คลิกหลังวันเริ่ม → ขยายเป็น end
         if (hasBookedInRange(tempStart, d)) return;
         setTempEnd(d);
       }
-      setSelecting(false); // จบการเลือก (คลิกครั้งถัดไปเริ่มใหม่)
+      setSelecting(false);
     }
   };
 
@@ -156,6 +134,9 @@ export default function CalendarDialog({
     if (!tempStart || !tempEnd) return false;
     return d > tempStart && d < tempEnd;
   };
+
+  // ปี: th=พ.ศ. / en=ค.ศ.
+  const displayYear = lang === "th" ? viewYear + 543 : viewYear;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-5">
@@ -165,7 +146,7 @@ export default function CalendarDialog({
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">
-            {monthNames[viewMonth]} {viewYear + 543}
+            {monthNames[viewMonth]} {displayYear}
           </h2>
           <div className="flex gap-2">
             <button
@@ -189,7 +170,7 @@ export default function CalendarDialog({
         <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold">
           {dayNames.map((d, i) => (
             <div
-              key={d}
+              key={i}
               className={i === 0 || i === 6 ? "text-red-400" : "text-slate-500"}
             >
               {d}
@@ -218,7 +199,6 @@ export default function CalendarDialog({
             const isEndpoint = isStart || isEnd;
             const inSelected = isInSelectedRange(currentDate);
 
-            /* ─── ตรวจตำแหน่งใน range ที่ถูกจอง เพื่อวาดไฮไลท์ pill ─── */
             const prev = new Date(viewYear, viewMonth, day - 1);
             const next = new Date(viewYear, viewMonth, day + 1);
             const prevBooked =
@@ -237,7 +217,6 @@ export default function CalendarDialog({
                 key={day}
                 className="relative flex items-center justify-center"
               >
-                {/* ─── Layer: Booked pill (ไฮไลท์ช่วงจองเดิม) ─── */}
                 {isBooked && (
                   <span
                     className={`absolute inset-y-1 left-0 right-0 bg-blue-100 ${bookedRounding}`}
@@ -262,7 +241,6 @@ export default function CalendarDialog({
                 >
                   {day}
 
-                  {/* Dot สีแดง ถ้าถูกยกเลิก */}
                   {isCancelled && !isEndpoint && (
                     <span className="absolute right-1 top-0.5 h-1.5 w-1.5 rounded-full bg-red-500" />
                   )}
@@ -277,11 +255,15 @@ export default function CalendarDialog({
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
               <span className="h-3 w-6 rounded-full bg-blue-100" />
-              <span className="text-slate-500">มีการจองแล้ว</span>
+              <span className="text-slate-500">
+                {t("calendarDialog", "booked")}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-red-500" />
-              <span className="text-slate-500">ยกเลิกการจอง</span>
+              <span className="text-slate-500">
+                {t("calendarDialog", "cancelledBooking")}
+              </span>
             </div>
           </div>
 
@@ -291,7 +273,7 @@ export default function CalendarDialog({
               onClick={onClose}
               className="rounded-full bg-orange-500 px-6 py-2 text-sm font-bold text-white hover:bg-orange-600"
             >
-              ยกเลิก
+              {t("calendarDialog", "cancel")}
             </button>
             <button
               type="button"
@@ -301,7 +283,7 @@ export default function CalendarDialog({
               }
               className="rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              บันทึก
+              {t("calendarDialog", "confirm")}
             </button>
           </div>
         </div>
