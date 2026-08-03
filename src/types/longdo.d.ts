@@ -1,29 +1,111 @@
-// Longdo Map global type declarations — used by operations and routes pages
 declare global {
+  interface LongdoLocation {
+    lat: number;
+    lon: number;
+  }
+
+  interface LongdoVisibleControl {
+    visible: (visible: boolean) => void;
+  }
+
   interface LongdoMarker {
-    location: (loc?: { lat: number; lon: number }) => { lat: number; lon: number }
+    location: (location?: LongdoLocation) => LongdoLocation;
+
+    move: (location: LongdoLocation, animate?: boolean) => void;
   }
+
   interface LongdoMap {
-    Overlays: { add: (o: unknown) => void; remove: (o: unknown) => void; clear: () => void }
-    Layers:   { add: (l: unknown) => void; remove: (l: unknown) => void; setBase: (l: unknown) => void }
-    Event:    { bind: (name: string, cb: () => void) => void }
-    Ui:       { Fullscreen: { visible: (v: boolean) => void }; LayerSelector: { visible: (v: boolean) => void } }
-    location: (loc?: { lat: number; lon: number }, animate?: boolean) => void
-    zoom: (level?: number, animate?: boolean) => number
-    resize: () => void
+    Overlays: {
+      add: (overlay: unknown) => void;
+      remove: (overlay: unknown) => void;
+      clear: () => void;
+    };
+
+    Route: {
+      add: (location: LongdoLocation | unknown) => void;
+      search: () => void;
+      clear: () => void;
+    };
+
+    Layers: {
+      add: (layer: unknown) => void;
+      remove: (layer: unknown) => void;
+      clear: () => void;
+      insert: (index: number, layer: unknown) => void;
+      setBase: (layer: unknown) => void;
+    };
+
+    Event: {
+      bind: (name: string, callback: () => void) => void;
+    };
+
+    Ui: {
+      DPad?: LongdoVisibleControl;
+      Zoombar?: LongdoVisibleControl;
+      Geolocation?: LongdoVisibleControl;
+      Terrain?: LongdoVisibleControl;
+      Crosshair?: LongdoVisibleControl;
+      Scale?: LongdoVisibleControl;
+      Fullscreen?: LongdoVisibleControl;
+      LayerSelector?: LongdoVisibleControl;
+    };
+
+    location: (location?: LongdoLocation, animate?: boolean) => void;
+
+    zoom: (level?: number, animate?: boolean) => number;
+
+    resize: () => void;
   }
+
   interface Window {
     longdo: {
-      Map:      new (opts: Record<string, unknown>) => LongdoMap
-      Marker:   new (loc: { lat: number; lon: number }, opts?: Record<string, unknown>) => LongdoMarker
-      Polyline: new (locs: Array<{ lat: number; lon: number }>, opts?: Record<string, unknown>) => unknown
-      Icon:     new (opts: Record<string, unknown>) => unknown
-      Ui:       { DPad: unknown; Zoombar: unknown; Crosshair: unknown; Scale: unknown }
-      zoom:     { base: number }
-      Event:    { bind: (target: unknown, name: string, cb: () => void) => void }
-      Layers:   { NORMAL: unknown; GRAY: unknown; TOPO: unknown; TRAFFIC: unknown; POI: unknown; SATELLITE: unknown }
-    }
+      Map: new (options: Record<string, unknown>) => LongdoMap;
+
+      Marker: new (
+        location: LongdoLocation,
+        options?: Record<string, unknown>,
+      ) => LongdoMarker;
+
+      Polyline: new (
+        locations: LongdoLocation[],
+        options?: Record<string, unknown>,
+      ) => unknown;
+
+      Layer: new (name: string, options: Record<string, unknown>) => unknown;
+
+      LayerType: {
+        WMS: unknown;
+        WMTS_REST: unknown;
+        TMS: unknown;
+        Custom: unknown;
+      };
+
+      UiComponent: {
+        Full: unknown;
+        Mobile: unknown;
+        MobileWithFullLayerSelector: unknown;
+        None: unknown;
+      };
+
+      Layers: {
+        NORMAL: unknown;
+        GRAY: unknown;
+        LIGHT: unknown; // โทนสว่าง ขาว-เทา (ปุ่ม "สว่าง")
+        TOPO: unknown;
+        TRAFFIC: unknown;
+        POI: unknown;
+        SATELLITE: unknown;
+      };
+
+      Event: {
+        bind: (target: unknown, name: string, callback: () => void) => void;
+      };
+
+      zoom: {
+        base: number;
+      };
+    };
   }
 }
 
-export {}
+export {};

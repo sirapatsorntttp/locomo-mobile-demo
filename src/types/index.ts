@@ -890,3 +890,29 @@ export interface AppNotification {
     employees?: { id: string; code: string };
   };
 }
+
+export type Position = {
+  latitude: number;
+  longitude: number;
+  event?: string;
+  is_state?: string;
+  created_at: string;
+};
+
+export type Stop = {
+  id: string;
+  code: string;
+  name_th: string;
+  name_en: string;
+  latitude: number;
+  longitude: number;
+  queue_default: number;
+};
+
+export type TrackingDetail = {
+  reserve: any;
+  post: any;
+  current: Position | null;
+  path: { latitude: number; longitude: number }[];
+  stops: Stop[];
+};

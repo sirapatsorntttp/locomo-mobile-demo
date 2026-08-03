@@ -23,6 +23,7 @@ const menus: {
 
 const HIDE_ON_ROUTES = [
   "/mobile/qr",
+  "/mobile/tracking/",
 
   // หน้า ที่ต้องการ fullscreen
 ];

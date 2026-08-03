@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -12,19 +12,63 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 import { useLang } from "@/lib/lang-context";
-import { mockRoutes } from "@/lib/mockData";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useEmployeeStore } from "@/lib/stores/employee.store";
+import { useReserveStore } from "@/lib/stores/reserve.store";
+import type { Reserve } from "@/types";
+
+const fmtTime = (t?: string) => {
+  if (!t) return "";
+  const d = new Date(t);
+  if (!isNaN(d.getTime()))
+    return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  return t.slice(0, 5);
+};
 
 export default function TrackingPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const openMenu = useUIStore((s) => s.openMenu);
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
-  const filteredRoutes = mockRoutes.filter((r) =>
-    `${r.routeCode} ${r.routeName}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
+  const { profile } = useAuthStore();
+  const { employees, loadEmployees } = useEmployeeStore();
+  const { reserves, loadReserves } = useReserveStore();
+
+  const currentEmployee = employees.find((e) => e.code === profile?.code);
+
+  useEffect(() => {
+    loadEmployees();
+  }, [loadEmployees]);
+
+  // โหลดการจองวันนี้ (เฉพาะ active — waiting/approved/finished)
+  useEffect(() => {
+    if (!currentEmployee?.id) return;
+    const today = new Date();
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    loadReserves({
+      employee_id: currentEmployee.id,
+      date_from: key,
+      date_to: key,
+    });
+  }, [currentEmployee?.id, loadReserves]);
+
+  const trips = useMemo(
+    () => reserves.filter((r) => r.is_state !== "canceled"),
+    [reserves],
   );
+
+  const filtered = useMemo(() => {
+    const kw = search.trim().toLowerCase();
+    if (!kw) return trips;
+    return trips.filter((r) =>
+      `${r.route?.code ?? ""} ${r.route?.name_th ?? ""} ${r.route?.name_en ?? ""}`
+        .toLowerCase()
+        .includes(kw),
+    );
+  }, [trips, search]);
+
+  const runningCount = trips.filter((r) => r.is_state === "approved").length;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -33,7 +77,6 @@ export default function TrackingPage() {
         style={{ backgroundImage: "url('/images/bg.jpg')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 via-blue-700/50 to-blue-500/40" />
-
         <div className="flex items-start justify-between relative z-10">
           <div>
             <h1 className="text-xl font-bold text-white">
@@ -43,7 +86,6 @@ export default function TrackingPage() {
               {t("tracking", "subtitle")}
             </p>
           </div>
-
           <button
             type="button"
             onClick={openMenu}
@@ -73,34 +115,37 @@ export default function TrackingPage() {
       <div className="px-5 mt-5 grid grid-cols-2 gap-3">
         <StatCard
           label={t("tracking", "totalVehicles")}
-          value="15"
+          value={String(trips.length)}
           color="blue"
           icon={<Bus size={18} />}
         />
         <StatCard
           label={t("tracking", "running")}
-          value="8"
+          value={String(runningCount)}
           color="green"
           icon={<Navigation size={18} />}
         />
       </div>
 
-      {/* Route List */}
+      {/* Trip List */}
       <div className="px-5 mt-6">
         <h2 className="text-base font-bold text-slate-800 mb-3">
           {t("tracking", "todayList")}
         </h2>
 
         <div className="space-y-3">
-          {filteredRoutes.map((route) => (
-            <RouteCard
-              key={route.id}
-              route={route}
-              onClick={() => router.push(`/mobile/tracking/${route.id}`)}
+          {filtered.map((r) => (
+            <TripCard
+              key={r.id}
+              reserve={r}
+              lang={lang}
+              t={t}
+              fmtTime={fmtTime}
+              onClick={() => router.push(`/mobile/tracking/${r.id}`)}
             />
           ))}
 
-          {filteredRoutes.length === 0 && (
+          {filtered.length === 0 && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center">
               <p className="text-sm text-slate-400">
                 {t("tracking", "noData")}
@@ -129,7 +174,6 @@ function StatCard({
     blue: "bg-blue-50 text-blue-600",
     green: "bg-green-50 text-green-600",
   };
-
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
       <div
@@ -145,16 +189,33 @@ function StatCard({
   );
 }
 
-/* ═══════ Route Card ═══════ */
-function RouteCard({
-  route,
+/* ═══════ Trip Card ═══════ */
+function TripCard({
+  reserve,
+  lang,
+  t,
+  fmtTime,
   onClick,
 }: {
-  route: (typeof mockRoutes)[0];
+  reserve: Reserve;
+  lang: "th" | "en";
+  t: (s: any, k: any) => string;
+  fmtTime: (t?: string) => string;
   onClick?: () => void;
 }) {
-  const { t } = useLang();
-  const isOnRoute = route.status === "on-route";
+  const isApproved = reserve.is_state === "approved";
+  const routeCode = reserve.route?.code ?? "-";
+  const routeName =
+    (lang === "th" ? reserve.route?.name_th : reserve.route?.name_en) ||
+    reserve.route?.name_th ||
+    t("tracking", "noData");
+  const pointName =
+    (lang === "th" ? reserve.point?.name_th : reserve.point?.name_en) || "";
+  const time = fmtTime(reserve.shift?.default_time);
+  const dir =
+    reserve.shift?.trip_direction === "inbound"
+      ? t("tracking", "origin")
+      : t("tracking", "destination");
 
   return (
     <button
@@ -163,25 +224,21 @@ function RouteCard({
     >
       <div className="flex items-start gap-3">
         <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
-            isOnRoute ? "bg-blue-500" : "bg-slate-400"
-          }`}
+          className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${isApproved ? "bg-blue-500" : "bg-slate-400"}`}
         >
-          {route.routeCode}
+          {routeCode}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-slate-800 leading-tight">
-            {route.routeName}
+          <h3 className="text-base font-bold text-slate-800 leading-tight truncate">
+            {routeName}
           </h3>
           <div className="flex items-center gap-1.5 mt-1">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isOnRoute ? "bg-green-500 animate-pulse" : "bg-slate-300"
-              }`}
+              className={`w-1.5 h-1.5 rounded-full ${isApproved ? "bg-green-500 animate-pulse" : "bg-slate-300"}`}
             />
             <p className="text-xs text-slate-500">
-              {isOnRoute
-                ? `${t("tracking", "onRoute")} · ${route.currentStop}`
+              {isApproved
+                ? t("tracking", "onRoute")
                 : t("tracking", "notStarted")}
             </p>
           </div>
@@ -190,48 +247,12 @@ function RouteCard({
       </div>
 
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-dashed border-slate-200">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 text-slate-400">
-            <MapPin size={11} />
-            <span className="text-[10px]">{t("tracking", "origin")}</span>
-          </div>
-          <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">
-            {route.from}
-          </p>
-          <p className="text-sm font-bold text-blue-600 mt-0.5">
-            {route.startTime}
-          </p>
-        </div>
-
-        <div className="flex-shrink-0 text-slate-300">→</div>
-
-        <div className="flex-1 min-w-0 text-right">
-          <div className="flex items-center justify-end gap-1 text-slate-400">
-            <span className="text-[10px]">{t("tracking", "destination")}</span>
-            <MapPin size={11} />
-          </div>
-          <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">
-            {route.to}
-          </p>
-          <p className="text-sm font-bold text-blue-600 mt-0.5">
-            {route.endTime}
-          </p>
-        </div>
+        <MapPin size={14} className="text-blue-500 shrink-0" />
+        <p className="text-xs font-semibold text-slate-700 truncate flex-1">
+          {pointName}
+        </p>
+        <p className="text-sm font-bold text-blue-600">{time}</p>
       </div>
-
-      {isOnRoute && (
-        <div className="mt-3">
-          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all"
-              style={{ width: `${route.progress}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1 text-right">
-            {t("tracking", "progress")} {route.progress}%
-          </p>
-        </div>
-      )}
     </button>
   );
 }
