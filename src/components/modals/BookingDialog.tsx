@@ -13,6 +13,7 @@ import type { Lang } from "@/lib/i18n";
 interface Props {
   booking: Reserve;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
 const fmtTime = (t?: string) => {
@@ -71,7 +72,11 @@ const formatDisplayDate = (lang: Lang, iso?: string) => {
   return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear() + 543}`;
 };
 
-export default function BookingDialog({ booking, onClose }: Props) {
+export default function BookingDialog({
+  booking,
+  onClose,
+  readOnly = false,
+}: Props) {
   const { openDialog, closeDialog } = useUIStore();
   const { deleteReserve, addReserve } = useReserveStore();
   const { shifts, loadShifts } = useShiftStore();
@@ -80,7 +85,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
   const isPending = booking.is_state === "waiting";
   const isApproved =
     booking.is_state === "approved" || booking.is_state === "finished";
-  const editable = isPending;
+  const editable = isPending && !readOnly;
 
   const [editDate, setEditDate] = useState(toInputDate(booking.travel_date));
   const [editDir, setEditDir] = useState<"inbound" | "outbound">(
@@ -319,7 +324,7 @@ export default function BookingDialog({ booking, onClose }: Props) {
 
           {/* Buttons */}
           <div className="mt-6">
-            {isPending ? (
+            {isPending && !readOnly ? (
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleCancelBooking}

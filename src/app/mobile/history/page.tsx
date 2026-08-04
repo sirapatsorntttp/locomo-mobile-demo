@@ -45,7 +45,8 @@ export default function HistoryPage() {
 
   useEffect(() => {
     loadEmployees();
-  }, [loadEmployees]);
+    loadReserves();
+  }, [loadEmployees, loadReserves]);
 
   useEffect(() => {
     if (currentEmployee?.id) {

@@ -63,6 +63,8 @@ export const translations = {
     origin: d("ต้นทาง", "Origin"),
     destination: d("ปลายทาง", "Destination"),
     noTrip: d("ยังไม่มีการเดินทาง", "No trips yet"),
+    dirIn: d("ขาเข้า", "Trip In"),
+    dirOut: d("ขาออก", "Trip Out"),
   },
 
   // ── Mobile: Reserve (booking) ────────────────────────────────
@@ -129,6 +131,7 @@ export const translations = {
     dirIn: d("รับเข้า", "Inbound"),
     dirOut: d("รับออก", "Outbound"),
     more: d("เพิ่มเติม", "more"),
+    cancelled: d("ยกเลิก", "Cancel"),
     // ชื่อเดือน (12 ตัว คั่นด้วย ,)
     months: d(
       "มกราคม,กุมภาพันธ์,มีนาคม,เมษายน,พฤษภาคม,มิถุนายน,กรกฎาคม,สิงหาคม,กันยายน,ตุลาคม,พฤศจิกายน,ธันวาคม",
@@ -341,6 +344,8 @@ export const translations = {
     date: d("วันที่", "Date"),
     time: d("เวลา", "Time"),
     detail: d("รายละเอียด", "Details"),
+    cancelled: d("ยกเลิก", "Cancel"),
+    pending: d("รออนุมัติ", "Pending"),
     route: d("สายรถ", "Route"),
     driver: d("คนขับ", "Driver"),
     viewBooking: d("ดูรายละเอียดการจอง", "View Booking Details"),

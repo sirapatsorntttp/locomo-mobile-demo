@@ -49,7 +49,13 @@ export default function ProfilePage() {
     loadCompanies();
     loadEmployees();
     loadRoutesPoints();
-  }, []);
+  }, [
+    loadPlants,
+    fetchProfile,
+    loadCompanies,
+    loadEmployees,
+    loadRoutesPoints,
+  ]);
 
   const userPlants = companyPlants.filter((cp) =>
     profile?.plantIds?.includes(cp.id),

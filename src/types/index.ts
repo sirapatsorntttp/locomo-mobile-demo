@@ -916,3 +916,10 @@ export type TrackingDetail = {
   path: { latitude: number; longitude: number }[];
   stops: Stop[];
 };
+
+export type ScheduleType =
+  | "holiday"
+  | "booking"
+  | "cancelled"
+  | "event"
+  | "pending";

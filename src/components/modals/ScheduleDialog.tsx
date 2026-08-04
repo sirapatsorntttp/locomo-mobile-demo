@@ -12,21 +12,42 @@ import {
 } from "lucide-react";
 import { useUIStore } from "@/lib/store";
 import { useLang } from "@/lib/lang-context";
-import type { ScheduleItem, ScheduleType } from "@/lib/mockData";
-import type { Lang } from "@/lib/i18n";
+import type { Reserve, Calendar, ScheduleType } from "@/types";
+
+// นิยาม type เอง ไม่พึ่ง mockData
+export interface ScheduleItem {
+  id: string;
+  date: string;
+  title: string;
+  type: ScheduleType;
+  reserve?: Reserve;
+  calendar?: Calendar;
+}
 
 interface Props {
   item: ScheduleItem;
   onClose: () => void;
 }
 
-// icon/สี ตาม type (label ดึงจาก t() แยก)
+// icon/สี ตาม type
 const typeIcon: Record<ScheduleType, { icon: React.ElementType; bg: string }> =
   {
     holiday: { icon: PartyPopper, bg: "bg-red-500" },
     booking: { icon: Bus, bg: "bg-blue-500" },
+    pending: { icon: Bus, bg: "bg-orange-700" },
+    cancelled: { icon: Bus, bg: "bg-red-500" },
     event: { icon: CalendarIcon, bg: "bg-amber-500" },
   };
+
+const fmtTime = (t?: string) => {
+  if (!t) return "";
+  const d = new Date(t);
+  if (!isNaN(d.getTime()))
+    return `${String(d.getUTCHours()).padStart(2, "0")}:${String(
+      d.getUTCMinutes(),
+    ).padStart(2, "0")}`;
+  return t.slice(0, 5);
+};
 
 export default function ScheduleDialog({ item, onClose }: Props) {
   const { openDialog, closeDialog } = useUIStore();
@@ -42,8 +63,55 @@ export default function ScheduleDialog({ item, onClose }: Props) {
   }, [openDialog, closeDialog]);
 
   const cfg = typeIcon[item.type];
-  const typeLabel = t("scheduleDialog", item.type); // holiday/booking/event
+  const typeLabel = t("scheduleDialog", item.type);
   const dateObj = new Date(item.date);
+
+  // ── ดึงข้อมูลจริงจาก reserve / calendar ──
+  const reserve = item.reserve;
+  const calendar = item.calendar as any;
+
+  // เวลา (จากกะของการจอง)
+  const timeText = reserve ? fmtTime(reserve.shift?.default_time) : "";
+
+  // ทิศทาง (ขาเข้า/ขาออก)
+  const dirText = reserve
+    ? reserve.shift?.trip_direction === "inbound"
+      ? t("newFeedback", "dirIn")
+      : reserve.shift?.trip_direction === "outbound"
+        ? t("newFeedback", "dirOut")
+        : ""
+    : "";
+
+  // เส้นทาง
+  const routeName = reserve
+    ? (lang === "th"
+        ? reserve.route?.name_th || reserve.route?.name_en
+        : reserve.route?.name_en || reserve.route?.name_th) || ""
+    : "";
+  const routeCode = reserve?.route?.code ?? "";
+  const routeText =
+    routeCode || routeName ? `${routeCode} ${routeName}`.trim() : "";
+
+  // จุดรับ
+  const pointName = reserve
+    ? (lang === "th"
+        ? reserve.point?.name_th || reserve.point?.name_en
+        : reserve.point?.name_en || reserve.point?.name_th) || ""
+    : "";
+
+  // พนักงานผู้จอง
+  const empName = reserve
+    ? lang === "th"
+      ? `${reserve.employee?.first_name_th ?? ""} ${reserve.employee?.last_name_th ?? ""}`.trim()
+      : `${reserve.employee?.first_name_en ?? ""} ${reserve.employee?.last_name_en ?? ""}`.trim()
+    : "";
+
+  // ชื่อวันหยุด (จาก calendar จริง)
+  const holidayName = calendar
+    ? lang === "th"
+      ? calendar.name_th || calendar.name || calendar.title
+      : calendar.name_en || calendar.name || calendar.title
+    : "";
 
   const formatDate = () => {
     const days = t("scheduleDialog", "days").split(",");
@@ -107,7 +175,11 @@ export default function ScheduleDialog({ item, onClose }: Props) {
             </div>
             <div>
               <p className="text-xs font-semibold text-white/80">{typeLabel}</p>
-              <h2 className="text-lg font-bold text-white">{item.title}</h2>
+              <h2 className="text-lg font-bold text-white">
+                {item.type === "holiday"
+                  ? holidayName || item.title
+                  : item.title}
+              </h2>
             </div>
           </div>
         </div>
@@ -120,52 +192,47 @@ export default function ScheduleDialog({ item, onClose }: Props) {
             value={formatDate()}
           />
 
-          {item.time && (
+          {/* เวลา + ทิศทาง (การจอง) */}
+          {timeText && (
             <DetailRow
               Icon={Clock}
               label={t("scheduleDialog", "time")}
-              value={item.time}
+              value={dirText ? `${timeText} · ${dirText}` : timeText}
             />
           )}
 
-          {item.subtitle && (
+          {/* จุดรับ (การจอง) */}
+          {pointName && (
             <DetailRow
               Icon={MapPin}
               label={t("scheduleDialog", "detail")}
-              value={item.subtitle}
+              value={pointName}
             />
           )}
 
-          {item.routeCode && (
+          {/* เส้นทาง (การจอง) */}
+          {routeText && (
             <DetailRow
               Icon={Bus}
               label={t("scheduleDialog", "route")}
-              value={item.routeCode}
+              value={routeText}
             />
           )}
 
-          {item.driver && (
+          {/* พนักงานผู้จอง (การจอง) */}
+          {empName && (
             <DetailRow
               Icon={User}
               label={t("scheduleDialog", "driver")}
-              value={item.driver}
+              value={empName}
             />
           )}
 
-          {item.detail && (
+          {/* หมายเหตุการจอง */}
+          {reserve?.remark && (
             <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-              {item.detail}
+              {reserve.remark}
             </div>
-          )}
-
-          {/* Action */}
-          {item.type === "booking" && (
-            <button
-              type="button"
-              className="mt-2 w-full rounded-2xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700"
-            >
-              {t("scheduleDialog", "viewBooking")}
-            </button>
           )}
         </div>
       </div>

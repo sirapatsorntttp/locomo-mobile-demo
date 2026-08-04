@@ -9,9 +9,8 @@ import { useReserveStore } from "@/lib/stores/reserve.store";
 import { useCalendarStore } from "@/lib/stores/useCalendarStore";
 import { useLang } from "@/lib/lang-context";
 import ScheduleDialog from "@/components/modals/ScheduleDialog";
-import type { Reserve, Calendar } from "@/types";
-
-type ScheduleType = "holiday" | "booking" | "event";
+import BookingDialog from "@/components/modals/BookingDialog";
+import type { Reserve, Calendar, ScheduleType } from "@/types";
 
 interface ScheduleItem {
   id: string;
@@ -108,11 +107,13 @@ export default function SchedulePage() {
       });
     });
 
-    // การจอง
+    // การจอง (รวมที่ยกเลิกแล้ว)
     reserves.forEach((r) => {
-      if (r.is_state === "canceled") return;
       const dateKey = (r.travel_date ?? "").slice(0, 10);
       if (!dateKey) return;
+
+      const isCanceled = r.is_state === "canceled";
+      const isPending = r.is_state === "waiting";
 
       const dir =
         r.shift?.trip_direction === "inbound"
@@ -121,11 +122,27 @@ export default function SchedulePage() {
       const time = fmtTime(r.shift?.default_time);
       const routeCode = r.route?.code ? ` · ${r.route.code}` : "";
 
+      const bookingType: ScheduleType = isCanceled
+        ? "cancelled"
+        : isPending
+          ? "pending"
+          : "booking";
+
+      const prefix = isCanceled
+        ? `${t("schedule", "cancelled")}: `
+        : isPending
+          ? `${t("scheduleDialog", "pending")}: `
+          : "";
+
       push(dateKey, {
         id: `res-${r.id}`,
+
         date: dateKey,
-        title: `${dir} ${time}${routeCode}`.trim(),
-        type: "booking",
+
+        title: `${prefix}${dir} ${time}${routeCode}`.trim(),
+
+        type: bookingType,
+
         reserve: r,
       });
     });
@@ -211,6 +228,11 @@ export default function SchedulePage() {
       <div className="mt-2 mx-5 flex items-center justify-center gap-4 rounded-2xl bg-white p-3 shadow-sm">
         <LegendDot color="bg-red-200" label={t("schedule", "holiday")} />
         <LegendDot color="bg-blue-200" label={t("schedule", "booking")} />
+        <LegendDot color="bg-red-400" label={t("schedule", "cancelled")} />
+        <LegendDot
+          color="bg-orange-200"
+          label={t("scheduleDialog", "pending")}
+        />
       </div>
 
       {/* Calendar Grid */}
@@ -288,9 +310,18 @@ export default function SchedulePage() {
       </div>
 
       {/* Dialog */}
-      {selected && (
-        <ScheduleDialog item={selected} onClose={() => setSelectedId(null)} />
-      )}
+      {selected &&
+        (selected.reserve ? (
+          // ทุกการจอง (รวมยกเลิก) → BookingDialog เดียวกับหน้า History (ดูอย่างเดียว)
+          <BookingDialog
+            booking={selected.reserve}
+            onClose={() => setSelectedId(null)}
+            readOnly
+          />
+        ) : (
+          // วันหยุด → ScheduleDialog เดิม
+          <ScheduleDialog item={selected} onClose={() => setSelectedId(null)} />
+        ))}
     </div>
   );
 }
@@ -315,6 +346,8 @@ function EventPill({
   const styles: Record<ScheduleType, string> = {
     holiday: "bg-red-100 text-red-700 hover:bg-red-200",
     booking: "bg-blue-200 text-blue-700 hover:bg-blue-200",
+    pending: "bg-orange-200 text-orange-700 hover:bg-orange-300",
+    cancelled: "bg-red-100 text-red-600  hover:bg-red-200",
     event: "bg-amber-100 text-amber-700 hover:bg-amber-200",
   };
 
