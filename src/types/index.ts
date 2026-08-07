@@ -891,15 +891,27 @@ export interface AppNotification {
   };
 }
 
-export type Position = {
+export type TrackingPosition = {
   latitude: number;
   longitude: number;
-  event?: string;
-  is_state?: string;
+  created_at: string | null;
+  is_fallback?: boolean;
+};
+
+export type TrackingPathPoint = {
+  latitude: number;
+  longitude: number;
   created_at: string;
 };
 
-export type Stop = {
+export type TrackingStopType =
+  | "origin"
+  | "destination"
+  | "passenger"
+  | "stop"
+  | "plant";
+
+export type TrackingStop = {
   id: string;
   code: string;
   name_th: string;
@@ -907,14 +919,97 @@ export type Stop = {
   latitude: number;
   longitude: number;
   queue_default: number;
+  point_type: TrackingStopType;
+};
+
+export type TrackingReserveRoute = {
+  id: string;
+  code: string;
+  name_th: string;
+  name_en: string;
+  trip_direction: TripDirection;
+};
+
+export type TrackingReserveShift = {
+  id: string;
+  code: string;
+  name_th: string;
+  name_en: string;
+  trip_direction: ShiftDirection;
+  default_time: string;
+};
+
+export type TrackingReservePoint = {
+  id: string;
+  code: string;
+  name_th: string;
+  name_en: string;
+  latitude: number;
+  longitude: number;
+  queue_default?: number | null;
+};
+
+export type TrackingReserveEmployee = {
+  id: string;
+  code: string;
+  first_name_th: string;
+  last_name_th: string;
+  first_name_en: string;
+  last_name_en: string;
+};
+
+export type TrackingPost = {
+  id: string;
+  code: string;
+};
+
+export type TrackingDriver = {
+  id: string;
+  code: string;
+  first_name_th: string;
+  last_name_th: string;
+  first_name_en: string;
+  last_name_en: string;
+  tel: string | null;
+};
+
+export type TrackingVehicle = {
+  id: string;
+  code: string;
+  license: string;
+  province: string;
+  capacity: number | null;
 };
 
 export type TrackingDetail = {
-  reserve: any;
-  post: any;
-  current: Position | null;
-  path: { latitude: number; longitude: number }[];
-  stops: Stop[];
+  reserve: {
+    id: string;
+    travel_date: string;
+    working_date: string;
+    is_state: ReserveStatus;
+
+    route: TrackingReserveRoute;
+    shift: TrackingReserveShift;
+
+    point: TrackingReservePoint;
+    pickup: TrackingReservePoint;
+
+    employee: TrackingReserveEmployee;
+  };
+
+  post: TrackingPost | null;
+
+  driver: TrackingDriver | null;
+
+  vehicle: TrackingVehicle | null;
+
+  has_gps: boolean;
+
+  current: TrackingPosition | null;
+
+  path: TrackingPathPoint[];
+
+  stops: TrackingStop[];
 };
 
 export type ScheduleType =
